@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Kilpailuajastin (4.1)</title>
+  <style>
+    :root {
+      --bg: #0b1118; --panel: #101826; --muted: #1a2433; --text: #e6eefc; --subtext: #a9b6c9; --accent: #5b8cff;
+      --good: #1ec28b; --bad: #ff5a6b; --chip: #152036; --shadow: 0 6px 24px rgba(0,0,0,0.35);
+      --res-bg: #0f192b; --highlight-follow: rgba(46, 213, 115, 0.32); --highlight-follow-border: #2ed573;
+      --highlight-compare: rgba(255, 234, 0, 0.30); --highlight-compare-border: #ffdd57; --neutral: #cbd5e1;
+      --badge-bg: #253658; --badge-brd: #31476f; --disabled-bg: #132033; --disabled-brd: #23324a; --disabled-text: #86a0c0;
+      --toast-bg: rgba(18,27,46,.96); --toast-brd: #2a3b5e;
+      --modal-bg: rgba(10,16,26,0.76); --modal-card: #0f192b; --modal-brd:#2a3b5e;
+    }
+    *{box-sizing:border-box} html,body{height:100%} body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial}
+    .app{display:grid;grid-template-rows:auto 1fr;min-height:100dvh}
+    .tracking{position:sticky;top:0;z-index:2;position:relative;background:linear-gradient(180deg,rgba(16,24,38,.95),rgba(16,24,38,.75));backdrop-filter:blur(6px);border-bottom:1px solid #1f2b40;padding:10px 12px 8px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .title{font-size:14px;color:var(--subtext);margin-right:auto;display:flex;gap:8px;align-items:baseline}
+    .title .follow{font-weight:700;color:var(--text)}
+    .pos{background:var(--chip);border:1px solid #22314b;border-radius:10px;padding:4px 8px;font-size:12px;color:var(--subtext)}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);border:1px solid #22314b;padding:6px 10px;border-radius:999px;font-variant-numeric:tabular-nums;box-shadow:var(--shadow);user-select:none}
+    .chip .label{color:var(--subtext);font-size:12px} .chip .val{font-weight:700;letter-spacing:.3px}
+    .chip.good .val{color:var(--good)} .chip.bad .val{color:var(--bad)} .chip.neutral .val{color:var(--neutral)}
+    .lap-badge{display:inline-block;margin-left:6px;padding:2px 8px;border-radius:10px;font-size:12px;color:#dbe7ff;background:var(--badge-bg);border:1px solid var(--badge-brd)}
+    .prev-row{margin-top:6px;opacity:.45;filter:saturate(.6);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    .prev-row .label{font-size:11px;color:var(--subtext);margin-right:2px}
+    .results{margin-top:8px;background:var(--res-bg);border:1px solid #1f2b40;border-radius:12px;overflow:hidden}
+    .results h4{margin:0;padding:8px 10px;font-size:13px;color:var(--subtext);border-bottom:1px solid #1f2b40;display:flex;align-items:center;gap:8px}
+    .results .list{max-height:32dvh;overflow:auto;-webkit-overflow-scrolling:touch}
+    .res-item{position:relative;display:grid;grid-template-columns:28px 1fr auto;gap:8px;align-items:center;padding:8px 10px 8px 12px;border-bottom:1px dashed #1d2a44}
+    .res-item:last-child{border-bottom:none}
+    .res-item .bib{font-weight:700} .res-item .name{color:var(--subtext);font-size:12px} .res-item .time{font-variant-numeric:tabular-nums;color:#dbe7ff}
+    .res-item.follow{background:var(--highlight-follow);box-shadow:inset 3px 0 0 0 var(--highlight-follow-border)}
+    .res-item.compare{background:var(--highlight-compare);box-shadow:inset 3px 0 0 0 var(--highlight-compare-border)}
+    .main{display:grid;grid-template-rows:auto 1fr;gap:10px;padding:10px 10px 86px;min-height:0;}
+    .columns{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:10px;height:100%;min-height:0;}
+    .col{background:var(--panel);border:1px solid #1f2b40;border-radius:14px;display:flex;flex-direction:column;box-shadow:var(--shadow);min-height:0;height:100%;}
+    .col h3{margin:0;font-size:13px;padding:10px 12px;color:var(--subtext);border-bottom:1px solid #1f2b40}
+    .col .list{overflow:auto;-webkit-overflow-scrolling:touch;padding:10px;display:grid;gap:8px;touch-action:pan-y;flex:1;min-height:0;}
+    .bibbtn{display:flex;align-items:center;justify-content:center;padding:14px 10px;border-radius:12px;background:#17233a;border:1px solid #22314b;font-size:18px;font-weight:700;color:var(--text);box-shadow:var(--shadow);user-select:none;-webkit-tap-highlight-color:transparent}
+    .bibbtn.following{outline:2px solid var(--accent);box-shadow:0 0 0 4px rgba(91,140,255,0.2),var(--shadow)}
+    .gear{position:fixed;right:14px;bottom:16px;z-index:5;width:56px;height:56px;border-radius:50%;background:linear-gradient(160deg,#2a3d66,#1e2d4d);border:1px solid #2e436d;display:grid;place-items:center;box-shadow:0 10px 28px rgba(0,0,0,0.45);-webkit-tap-highlight-color:transparent}
+    .gear svg{width:28px;height:28px;fill:none;stroke:#dbe7ff;stroke-width:1.6px}
+    .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top-left-radius:16px;border-top-right-radius:16px;box-shadow:0 -10px 30px rgba(0,0,0,0.5);transform:translateY(110%);transition:transform 280ms ease;z-index:6}
+    .sheet.open{transform:translateY(0)} .sheet .handle{display:grid;place-items:center;padding:10px 0 12px;touch-action:none;user-select:none;-webkit-user-select:none}
+    .sheet .handle span{display:inline-block;width:48px;height:4px;border-radius:999px;background:#2a3b5e}
+    .sheet .content{padding:10px 14px 16px;max-height:70dvh;overflow:auto}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    label{font-size:12px;color:var(--subtext);display:block;margin-bottom:6px}
+    input,textarea{width:100%;padding:12px 12px;border-radius:12px;border:1px solid #22314b;background:#152238;color:#e6eefc;font-size:16px}
+    input[disabled]{background:var(--disabled-bg);border-color:var(--disabled-brd);color:var(--disabled-text)}
+    textarea{min-height:110px;resize:vertical}
+    .actions{display:flex;gap:10px;justify-content:space-between;margin-top:8px}
+    .btn{padding:10px 14px;border-radius:12px;border:1px solid #2e436d;background:#213257;color:#e6eefc;font-weight:600}
+    .btn.primary{background:#2b4aa0;border-color:#3559b7} .btn.danger{background:#5a2030;border-color:#7a2b40}
+    #undoBtn{position:absolute;top:10px;right:12px;z-index:7;padding:10px 16px;border-radius:999px;font-size:16px;background:#213257;border:1px solid #2e436d;}
+    #undoBtn[disabled]{opacity:.45;filter:saturate(.2);}
+    #topChips{padding-right:180px;}
+    .title{padding-right:180px;}
+    :root{ --bibSize: clamp(54px, 10vw, 86px); --bibMin: clamp(68px, 12vw, 110px); }
+    .bibbtn{width:100%;height:var(--bibSize);font-size:clamp(16px, 2.6vw, 20px);} 
+    .col .list{grid-auto-rows:var(--bibSize);align-content:start;grid-template-columns:repeat(auto-fit, minmax(var(--bibMin), 1fr));}
+    body.race-stopped .col .list{pointer-events:none;}
+    body.race-stopped #stoppedBanner{display:block;}
+    body.race-stopped #undoBtn{display:none;}
+    /* Ensure gear always clickable */
+    #gearBtn{z-index:60;}
+
+    .toast{position:fixed;left:50%;bottom:14px;transform:translateX(-50%) translateY(120%);background:var(--toast-bg);border:1px solid var(--toast-brd);padding:10px 14px;border-radius:12px;z-index:40;box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .25s ease, opacity .25s ease;opacity:0}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    /* Confirmation modal */
+    .modal{position:fixed;inset:0;background:var(--modal-bg);display:none;place-items:center;z-index:50}
+    .modal.open{display:grid}
+    .modal .card{background:var(--modal-card);border:1px solid var(--modal-brd);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.55);padding:14px;max-width:380px;width:92vw}
+    .modal h3{margin:6px 0 8px;font-size:18px}
+    .modal p{margin:0 0 12px;color:#b7c5db;font-size:14px}
+    .modal .row{display:flex;gap:10px;justify-content:flex-end}
+    .modal .btn{min-width:110px}
+    @media (orientation: landscape){ html,body,.app{height:100%} .app{grid-template-columns:1fr 1.3fr;grid-template-rows:1fr;min-height:100dvh}
+      :root{ --bibMin: 90px; }
+      .tracking{position:sticky;top:0;height:100dvh;overflow:hidden auto;border-right:1px solid #1f2b40;border-bottom:none;border-radius:0}
+      .main{height:100dvh;min-height:0;padding:10px 10px 10px}
+      .columns{height:100%;min-height:0}
+      .col{height:100%;min-height:0}
+      .results .list{max-height:none;height:calc(100dvh - 130px)} }
+  
+
+/* When everyone has finished: hide number grids and give results more room */
+body.all-finished .main{display:none;}
+body.all-finished .results .list{max-height:70dvh;}
+@media (orientation: landscape){ body.all-finished .tracking{height:100dvh;} body.all-finished .results .list{height:calc(100dvh - 60px); max-height:none;} }
+/* Help modal scrolling */
+#helpModal .card {
+  max-height: 80dvh; /* fits on mobile and desktop */
+  overflow: hidden; /* keep header/footer fixed */
+  display: flex;
+  flex-direction: column;
+}
+#helpModal .card > ul {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 6px; /* space for scrollbar */
+}
+
+#helpModal .card .row {
+  margin-top: 10px; /* keep close button visible */
+}
+</style>
+</head>
+<body>
+  <div class="app">
+    <div class="tracking" id="tracking">
+      <button class="btn" id="undoBtn" type="button" disabled aria-label="Peruuta viimeisin">Peruuta</button>
+      <div id="stoppedBanner" style="display:none;position:sticky;top:0;margin:-6px -6px 8px;padding:8px 10px;border-radius:12px;background:rgba(255,90,107,.22);border:1px solid rgba(255,90,107,.5);color:#ffd2d7;font-weight:800;letter-spacing:.6px;text-align:center;">KILPAILU LOPETETTU</div>
+      <div class="row">
+        <div class="title"><span>Seurattava:</span><span class="follow" id="followLabel">–</span><span class="pos" id="posLabel">Sijoitus: –</span></div>
+        <div class="chips" id="topChips"><div class="chip" id="raceClockChip"><span class="label">Kisan aika</span><span class="val" id="raceClock">--:--.-</span></div><span class="lap-badge" id="lapBadge" style="display:none"></span></div>
+        <div class="prev-row" id="prevRow" style="display:none"><span class="label" id="prevLabel"></span><div class="chips" id="prevChips"></div></div>
+      </div>
+      <div class="results" id="results"><h4>Tulosseuranta (ero kärkeen) <span class="lap-badge" id="resultsLapBadge" style="display:none"></span></h4><div class="list" id="resultsList"></div></div>
+    </div>
+    <div class="main"><div class="columns" id="columns"></div></div>
+  </div>
+
+  <div class="toast" id="toast">Kisa lopetettu. Oletukset palautettu.</div>
+
+  <button class="gear" id="gearBtn" aria-label="Asetukset">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a7.8 7.8 0 0 0 .06-1l2.02-1.57a.6.6 0 0 0 .14-.77l-1.92-3.33a.6.6 0 0 0-.72-.27l-2.34.94a.6.6 0 0 0-.86-.5l-.35-2.49a.6.6 0 0 0-.6-.51H9.13a.6.6 0 0 0-.6.51l-.35 2.49c-.29.14-.57.31-.86.5l-2.34-.94a.6.6 0 0 0-.72.27L2.34 10.1a.6.6 0 0 0 .14.77L4.5 12.44c-.01.17-.02.34-.02.51 0 .17.01.34.02.51l-2.02 1.57a.6.6 0 0 0-.14.77l1.92 3.33a.6.6 0 0 0 .72.27l2.34-.94c.27.19.56.36.86.5l.35 2.49c.05.3.31.51.6.51h3.98c.3 0 .55-.21.6-.51l.35-2.49c.29-.14.58-.31.86-.5l2.34.94c.28.11.61 0 .72-.27l1.92-3.33a.6.6 0 0 0-.14-.77L19.46 15Z"/></svg>
+  </button>
+
+  <div class="sheet" id="sheet">
+    <div class="handle"><span></span></div>
+    <div class="content">
+      <h2 style="margin:8px 2px 12px;font-size:18px;">Asetukset</h2>
+      <div class="grid2">
+        <div><label for="bibStart">Kilpailunumero – alku</label><input id="bibStart" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="bibEnd">Kilpailunumero – loppu</label><input id="bibEnd" type="number" inputmode="numeric" min="0" /></div>
+      </div>
+      <div class="grid2" style="margin-top:10px;">
+        <div><label for="interval">Väliaikalähdön aikaväli (s)</label><input id="interval" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="laps">Kierrosten määrä</label><input id="laps" type="number" inputmode="numeric" min="1" /></div>
+      </div>
+      <div class="grid2" style="margin-top:10px;">
+        <div><label for="followBib">Seurattava kilpailunumero</label><input id="followBib" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="followName">Seurattavan nimi (valinnainen)</label><input id="followName" type="text" placeholder="Esim. K. Niskanen" /></div>
+      </div>
+      <div style="margin-top:10px;"><label for="compareBibs">Vertailunumerot (pilkuilla eroteltu)</label><input id="compareBibs" type="text" placeholder="2, 3, 4" /></div>
+      <div style="margin-top:10px;"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="2=A. Virtanen, 3=E. Heikkinen" /></div>
+      <div style="margin-top:10px;"><label for="allNames">Kaikkien nimet (numero=nimi, …)</label><textarea id="allNames" placeholder=\"1=Etunimi Sukunimi
+2=..."></textarea></div>
+  <div style="margin-top:10px;">
+    <label for="startListImport">Tuo lähtölista (kopioi–liitä)</label>
+    <textarea id="startListImport" placeholder="Liitä lähtölista tähän. Voit liittää taulukon (tabit) tai rivimuotoisen listan.\nEsim: 117\tPetra Rautiainen"></textarea>
+    <div class="actions" style="margin-top:8px; justify-content:flex-end;">
+      <button class="btn" id="importStartListBtn" type="button">Poimi numerot ja nimet (korvaa)</button>
+    </div>
+    <div id="importHint" style="margin-top:6px;font-size:12px;color:#9fb2cf;">
+      Vinkki: Kopioi lähtölista esim. nettisivulta/Excelistä ja liitä tähän. Ohjelma poimii sarakkeet <b>Nro</b> ja <b>Nimi</b>.
+    </div>
+  </div>
+
+      <div class="actions">
+        <button class="btn" id="helpBtn" onclick="(function(){var s=document.getElementById('sheet'); if(s && !s.classList.contains('open')) s.classList.add('open'); var m=document.getElementById('helpModal'); if(m) m.classList.add('open');})();">Ohje</button>
+        <button class="btn" id="stopRaceBtn" type="button" onclick="(function(){var m=document.getElementById('stopRaceModal'); if(m) m.classList.add('open');})();">Lopeta kilpailu</button>
+        <button class="btn danger" id="wipeAllBtn">Lopeta kisa ja palauta kaikki oletukset</button>
+        <button class="btn primary" id="saveBtn">Tallenna</button>
+      </div>
+      <div id="lockHint" style="margin-top:6px;font-size:12px;color:#9fb2cf;display:none;">* Kisa käynnissä: numeroväliä ja lähtöväliä ei voi muuttaa.</div>
+    </div>
+  </div>
+
+  <!-- Custom confirm modal -->
+  <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="card">
+      <h3 id="confirmTitle">Lopetetaanko kisa ja palautetaan kaikki oletuksiin?</h3>
+      <p>Tämä tyhjentää ajanoton, seurannat ja asetukset. Toiminto ei ole peruttavissa.</p>
+      <div class="row">
+        <button class="btn" id="cancelBtn">Peru</button>
+        <button class="btn danger" id="okBtn">Kyllä, lopeta</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --------- Keys ---------
+    const DEFAULTS = { bibStart:1, bibEnd:10, interval:30, laps:1, followBib:null, followName:'', compareBibs:[], compareNames: {}, allNames: {} };
+    const STORAGE_SETTINGS_KEY = 'skiTimerSettingsV4.1';
+ const STORAGE_RUN_KEY = 'skiTimerRun_V4.1';
+ const SESSION_KEY = 'skiTimerSessionV4.1';
+ const LEGACY_SETTINGS_KEY = 'skiTimerSettingsV4.0';
+ const LEGACY_RUN_KEY = 'skiTimerRun_V4.0';
+ const LEGACY_SESSION_KEY = 'skiTimerSessionV4.0';
+
+    // --------- State ---------
+    const state = { ...DEFAULTS, raceStartMs:null, cols:[], data:new Map(), finishedCount:0, history:[], viewLapOverride:null, raceStopped:false, raceStopMs:null };
+
+    const els = {
+      columns: document.getElementById('columns'), followLabel: document.getElementById('followLabel'), posLabel: document.getElementById('posLabel'),
+      topChips: document.getElementById('topChips'), lapBadge: document.getElementById('lapBadge'), prevRow: document.getElementById('prevRow'), prevLabel: document.getElementById('prevLabel'), prevChips: document.getElementById('prevChips'),
+      raceClock: document.getElementById('raceClock'), resultsList: document.getElementById('resultsList'), resultsLapBadge: document.getElementById('resultsLapBadge'),
+      sheet: document.getElementById('sheet'), gearBtn: document.getElementById('gearBtn'),
+      undoBtn: document.getElementById('undoBtn'), lockHint: document.getElementById('lockHint'),
+      inputs: { bibStart: document.getElementById('bibStart'), bibEnd: document.getElementById('bibEnd'), interval: document.getElementById('interval'), laps: document.getElementById('laps'), followBib: document.getElementById('followBib'), followName: document.getElementById('followName'), compareBibs: document.getElementById('compareBibs'), compareNames: document.getElementById('compareNames'), allNames: document.getElementById('allNames'), startListImport: document.getElementById('startListImport') },
+      saveBtn: document.getElementById('saveBtn'), wipeAllBtn: document.getElementById('wipeAllBtn'),
+      toast: document.getElementById('toast'),
+      modal: document.getElementById('confirmModal'), okBtn: document.getElementById('okBtn'), cancelBtn: document.getElementById('cancelBtn')
+    , helpBtn: document.getElementById('helpBtn'), helpModal: document.getElementById('helpModal'), helpCloseBtn: document.getElementById('helpCloseBtn'),
+ importStartListBtn: document.getElementById('importStartListBtn'),
+ importHint: document.getElementById('importHint'),
+      stopRaceBtn: document.getElementById('stopRaceBtn'),
+      stopRaceModal: document.getElementById('stopRaceModal'),
+      stopRaceYesBtn: document.getElementById('stopRaceYesBtn'),
+      stopRaceNoBtn: document.getElementById('stopRaceNoBtn'),
+      stopRaceCancelBtn: document.getElementById('stopRaceCancelBtn'),
+      stoppedBanner: document.getElementById('stoppedBanner')
+    };
+
+    // --------- Utils ---------
+    const pad = (n,w=2)=>String(n).padStart(w,'0');
+    const fmtT = (ms)=>{ if(!Number.isFinite(ms)) return '--:--.-'; const t=Math.max(0,Math.floor(ms)); const tenths=Math.floor((t%1000)/100); const s=Math.floor(t/1000); const m=Math.floor(s/60); const ss=s%60; return `${pad(m)}:${pad(ss)}.${tenths}`; };
+    const labelForCol = (i)=> `${i+1}. kierros`;
+    const parseCompareNames = (txt)=>{ const map={}; if(!txt) return map; txt.split(/[,\n;]/).forEach(p=>{ p=p.trim(); if(!p) return; const [num,...rest]=p.split('='); const n=Number((num||'').trim()); const name=rest.join('=').trim(); if(!Number.isNaN(n)&&name) map[n]=name; }); return map; };
+    const resolveDisplayName = (bib)=>{
+      if(!Number.isFinite(bib)) return '';
+      if (state.followBib===bib && state.followName) return state.followName;
+      if (state.compareNames && state.compareNames[bib]) return state.compareNames[bib];
+      if (state.allNames && state.allNames[bib]) return state.allNames[bib];
+      return '';
+    };
+    const showToast = (msg)=>{ els.toast.textContent = msg; els.toast.classList.add('show'); setTimeout(()=> els.toast.classList.remove('show'), 1600); };
+    const openModal = ()=> els.modal.classList.add('open');
+    const closeModal = ()=> els.modal.classList.remove('open');
+
+    // --------- Persistence ---------
+    const toPlain = ()=>({ version:'4.1', bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followName:state.followName, compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols, history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null, data:Array.from(state.data.entries()).map(([bib,v])=>({bib,passes:v.passes,adj:v.adj})) });
+    const fromPlain = (obj)=>{ try{ if(!obj) return false; state.bibStart=Number(obj.bibStart)||DEFAULTS.bibStart; state.bibEnd=Number(obj.bibEnd)||DEFAULTS.bibEnd; state.interval=Number(obj.interval)||DEFAULTS.interval; state.laps=Number(obj.laps)||DEFAULTS.laps; state.followBib=obj.followBib??null; state.followName=obj.followName||''; state.compareBibs=Array.isArray(obj.compareBibs)?obj.compareBibs.map(Number):[]; state.compareNames=obj.compareNames||{};
+      state.allNames=obj.allNames||{}; state.raceStartMs=obj.raceStartMs??null; state.finishedCount=obj.finishedCount||0; state.cols=Array.isArray(obj.cols)?obj.cols:[];
+      state.history = Array.isArray(obj.history)?obj.history:[];
+      state.viewLapOverride = (obj.viewLapOverride ?? null);
+      state.raceStopped = !!obj.raceStopped;
+      state.raceStopMs = (obj.raceStopMs ?? null);
+      state.data=new Map(); (obj.data||[]).forEach(rec=>{ const bib=Number(rec.bib); if(!Number.isFinite(bib)) return; state.data.set(bib,{passes:Array.isArray(rec.passes)?rec.passes:[], adj:Array.isArray(rec.adj)?rec.adj:[]}); }); return true; }catch(e){ return false; } };
+    const saveSettings = ()=>{ try{ localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify({ bibStart:state.bibStart,bibEnd:state.bibEnd,interval:state.interval,laps:state.laps,followBib:state.followBib,followName:state.followName,compareBibs:state.compareBibs,compareNames:state.compareNames })); }catch{} };
+    const saveRun = ()=>{ try{ localStorage.setItem(STORAGE_RUN_KEY, JSON.stringify(toPlain())); }catch{} };
+    const loadSettings = ()=>{ try{ let raw=localStorage.getItem(STORAGE_SETTINGS_KEY);
+      if(!raw && typeof LEGACY_SETTINGS_KEY!=='undefined') raw=localStorage.getItem(LEGACY_SETTINGS_KEY); if(raw){ const s=JSON.parse(raw); Object.assign(state, DEFAULTS, s); } }catch{} };
+    const loadRun = ()=>{ try{ let raw=localStorage.getItem(STORAGE_RUN_KEY);
+      if(!raw && typeof LEGACY_RUN_KEY!=='undefined') raw=localStorage.getItem(LEGACY_RUN_KEY); if(!raw) return false; const obj=JSON.parse(raw); return fromPlain(obj); }catch{ return false; } };
+    const clearAllStorage = ()=>{ try{ const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('skiTimer')) keys.push(k); } keys.forEach(k=>localStorage.removeItem(k)); }catch{} };
+
+    // --------- Lap & Race helpers ---------
+    const bibOffsetMs = (bib)=> (bib - state.bibStart) * state.interval * 1000;
+    const ensureBib = (bib)=>{ if(!state.data.has(bib)) state.data.set(bib,{passes:[],adj:[]}); return state.data.get(bib); };
+    const participantsWithPass = (lapFilter=null)=>{ const arr=[]; state.data.forEach((v,bib)=>{ if(v && v.passes.length>0){ const laps=v.passes.length; const useLap=lapFilter?Math.min(laps,lapFilter):laps; if(useLap>=1){ const adj=v.adj[useLap-1]; arr.push({bib,laps:useLap,adj}); } } }); return arr; };
+    const maxPassesAcross = ()=>{ let m=0; state.data.forEach(v=>{ if(v && v.passes.length>m) m=v.passes.length; }); return m; };
+    const followPasses = ()=>{ if(!state.followBib) return 0; const v=state.data.get(state.followBib); return v? v.passes.length: 0; };
+    const currentLap = ()=>{ const fp=followPasses(); if(fp>=1) return Math.min(fp,state.laps); const mp=maxPassesAcross(); return Math.min(mp,state.laps); };
+    const prevLap = ()=>{ const c=currentLap(); return c>1?(c-1):0; };
+
+    const getViewLap = () => (state.viewLapOverride ?? currentLap());
+    const clampLap = (lap) => Math.max(1, Math.min(state.laps, lap));
+
+    const lapDelta = (bibA,bibB,lap)=>{ const a=state.data.get(bibA), b=state.data.get(bibB); if(!a||!b) return null; if((a.adj.length<lap)||(b.adj.length<lap)) return null; return a.adj[lap-1]-b.adj[lap-1]; };
+    const totalBibs = ()=> Math.max(0, state.bibEnd - state.bibStart + 1);
+    const isRaceRunning = ()=>{ const total=totalBibs(); const anyPass = participantsWithPass().length>0 || state.raceStartMs!=null; const everyoneDone=(state.finishedCount===total && total>0); return anyPass && !everyoneDone && !state.raceStopped; };
+    const updateFinishedClass = ()=>{
+      const total = Math.max(0, state.bibEnd - state.bibStart + 1);
+      const allDone = (total>0) && (state.finishedCount===total);
+      document.body.classList.toggle('all-finished', allDone);
+    };
+
+const checkAllFinished = ()=>{ let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); if(d && d.passes.length>=state.laps) finished++; } state.finishedCount=finished; if(finished>0 && finished===totalBibs()) {
+      if (state.raceStopMs==null) state.raceStopMs = Date.now();
+      stopClock(true);
+      saveRun();
+    } ; updateFinishedClass(); };
+
+    // --------- Rendering ---------
+    const makeBibButton = (bib)=>{ const b=document.createElement('button'); b.className='bibbtn'; b.type='button'; b.textContent=bib; b.dataset.bib=String(bib); if(state.followBib===bib) b.classList.add('following'); return b; };
+    const attachTouchSafe = (container,onTap,onLongPress)=>{ let moved=false,startX=0,startY=0,startT=0,lpTimer=null,lpFired=false; const clearLP=()=>{ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } };
+      container.addEventListener('touchstart',(ev)=>{ const t=ev.touches[0]; startX=t.clientX; startY=t.clientY; startT=Date.now(); moved=false; lpFired=false; const target=ev.target.closest('.bibbtn'); if(!target) return; const bib=Number(target.dataset.bib); lpTimer=setTimeout(()=>{ lpFired=true; onLongPress && onLongPress(bib); },600); },{passive:true});
+      container.addEventListener('touchmove',(ev)=>{ const t=ev.touches[0]; if(Math.abs(t.clientX-startX)>8 || Math.abs(t.clientY-startY)>8){ moved=true; clearLP(); } },{passive:true});
+      container.addEventListener('touchend',(ev)=>{ clearLP(); if(moved||lpFired) return; const dt=Date.now()-startT; if(dt>450) return; const target=ev.target.closest('.bibbtn'); if(target) onTap(Number(target.dataset.bib)); },{passive:true});
+      container.addEventListener('click',(ev)=>{ const t=ev.target.closest('.bibbtn'); if(t) onTap(Number(t.dataset.bib)); }); };
+
+    const computePosition = (lapForRanking=null)=>{ const lap=lapForRanking||currentLap(); const arr=participantsWithPass(lap); arr.sort((a,b)=> (b.laps-a.laps) || (a.adj-b.adj)); const rankMap=new Map(); arr.forEach((x,i)=>rankMap.set(x.bib,i+1)); const rank= state.followBib ? (rankMap.get(state.followBib) ?? '–') : '–'; return {rank,arr,lap}; };
+
+    const renderTop = ()=>{
+      if(state.followBib){ const name = resolveDisplayName(state.followBib) ? ` ${resolveDisplayName(state.followBib)}` : ''; els.followLabel.textContent = resolveDisplayName(state.followBib) ? `#${state.followBib} ${resolveDisplayName(state.followBib)}` : `#${state.followBib}`; } else els.followLabel.textContent='–';
+      const cl=currentLap(); const {rank}=computePosition(cl); els.posLabel.textContent=`Sijoitus: ${rank}`; els.lapBadge.style.display = cl>=1 ? 'inline-block' : 'none'; if(cl>=1) els.lapBadge.textContent=`Kierros ${cl}`;
+      Array.from(els.topChips.querySelectorAll('.chip')).forEach(ch=>{ if(ch.id!=='raceClockChip') ch.remove(); });
+      const addDeltaChips=(lap,container,faded=false)=>{ if(!state.followBib || !state.compareBibs || state.compareBibs.length===0) return 0; let shown=0; state.compareBibs.forEach(c=>{ if(!Number.isFinite(c)||c===state.followBib) return; const delta=lapDelta(state.followBib,c,lap); const chip=document.createElement('div'); chip.className='chip'; if(faded) chip.style.opacity='.9'; const lab=document.createElement('span'); lab.className='label'; const cname = resolveDisplayName(c) ? ` ${resolveDisplayName(c)}` : ''; lab.textContent=`#${c}${cname}`; const val=document.createElement('span'); val.className='val'; if(delta===null){ chip.classList.add('neutral'); val.textContent='--:--.-'; } else if(delta>0){ chip.classList.add('bad'); val.textContent=`+${fmtT(delta)}`; } else if(delta<0){ chip.classList.add('good'); val.textContent=`-${fmtT(-delta)}`; } else { chip.classList.add('neutral'); val.textContent='0:00.0'; } chip.appendChild(lab); chip.appendChild(val); container.appendChild(chip); shown++; }); return shown; };
+      if(cl>=1) addDeltaChips(cl, els.topChips);
+      const pl=prevLap(); els.prevChips.innerHTML=''; if(pl>=1){ els.prevRow.style.display='flex'; els.prevLabel.textContent=`Edellinen: kierros ${pl}`; const cnt=addDeltaChips(pl,els.prevChips,true); if(cnt===0) els.prevRow.style.display='none'; } else els.prevRow.style.display='none';
+    };
+
+    const renderResults = ()=>{ const {arr,lap}=computePosition(getViewLap()); els.resultsList.innerHTML=''; els.resultsLapBadge.style.display = lap>=1 ? 'inline-block' : 'none'; if(lap>=1) els.resultsLapBadge.textContent=`Kierros ${lap}`; if(arr.length===0) return; const leaders = arr.filter(x=>x.laps>=lap);
+      const leaderAdj = (leaders.length? Math.min(...leaders.map(x=>x.adj)) : Math.min(...arr.map(x=>x.adj))); arr.forEach((x,idx)=>{ const row=document.createElement('div'); row.className='res-item'; row.dataset.bib=String(x.bib); if(x.bib===state.followBib) row.classList.add('follow'); else if((state.compareBibs||[]).includes(x.bib)) row.classList.add('compare'); const rank=document.createElement('div'); rank.textContent=idx+1; rank.style.textAlign='right'; rank.style.opacity='0.9'; const center=document.createElement('div'); const title=document.createElement('div'); title.className='bib'; const cname = resolveDisplayName(x.bib) ? ` ${resolveDisplayName(x.bib)}` : ''; const fname = (x.bib===state.followBib && resolveDisplayName(state.followBib)) ? ` ${resolveDisplayName(state.followBib)}` : ''; title.textContent=`#${x.bib}${(x.bib===state.followBib?fname:cname)}`; const sub=document.createElement('div'); sub.className='name'; sub.textContent=`Ohituksia: ${x.laps}/${state.laps}`; center.appendChild(title); center.appendChild(sub); const right=document.createElement('div'); right.className='time'; right.textContent = (x.laps>=lap) ? fmtT(x.adj - leaderAdj) : '--:--.-'; row.appendChild(rank); row.appendChild(center); row.appendChild(right); row.addEventListener('click', ()=>{ scrollFollowIntoView(); }); els.resultsList.appendChild(row); }); };
+
+    const scrollFollowIntoView = ()=>{ const cont=els.resultsList; if(!cont) return; const target=cont.querySelector('.res-item.follow'); if(!target) return; target.scrollIntoView({behavior:'smooth',block:'center'}); };
+
+    // --------- Clock ---------
+    const updateRaceClock = ()=>{ if(!els.raceClock) return; if(!state.raceStartMs){ els.raceClock.textContent='--:--.-'; return; } const now=(state.raceStopMs ?? Date.now()); const t=now-state.raceStartMs; const tenths=Math.floor((t%1000)/100); const s=Math.floor(t/1000); const m=Math.floor(s/60); const ss=s%60; els.raceClock.textContent=`${pad(m)}:${pad(ss)}.${tenths}`; };
+    let clockTimer=null; const startClock=()=>{ if(!clockTimer) clockTimer=setInterval(updateRaceClock,100); }; const stopClock=(force=false)=>{ const allDone=(state.finishedCount===totalBibs() && totalBibs()>0); if((force||allDone) && clockTimer){ clearInterval(clockTimer); clockTimer=null; } };
+
+    // --------- Columns ---------
+    const clearColumnsDOM = ()=>{ els.columns.innerHTML=''; };
+    const renderColumns = ()=>{ clearColumnsDOM(); const visibleIdx=[]; for(let i=0;i<state.laps;i++) if((state.cols[i]||[]).length>0) visibleIdx.push(i); if(visibleIdx.length===0){ updateFinishedClass(); return; } visibleIdx.forEach(i=>{ const col=document.createElement('div'); col.className='col'; col.dataset.col=String(i); const h=document.createElement('h3'); h.textContent=labelForCol(i); const list=document.createElement('div'); list.className='list'; list.id=`list-${i}`; col.appendChild(h); col.appendChild(list); (state.cols[i]||[]).forEach(bib=>list.appendChild(makeBibButton(bib))); els.columns.appendChild(col); attachTouchSafe(list, (bib)=>handleTap(i,bib), (bib)=>handleLongPress(i,bib)); }); };
+
+    // --------- Settings lock ---------
+    const updateSettingsControls = ()=>{ const running=isRaceRunning(); els.inputs.bibStart.disabled=running; els.inputs.bibEnd.disabled=running; els.inputs.interval.disabled=running; els.lockHint.style.display = running ? 'block' : 'none'; };
+
+    // --------- Actions ---------
+    const recordPass = (bib,whenMs)=>{ const entry=ensureBib(bib); entry.passes.push(whenMs); const adj=whenMs - bibOffsetMs(bib); entry.adj.push(adj); };
+    const removeLastPass = (bib)=>{ const entry=ensureBib(bib); if(entry.passes.length){ entry.passes.pop(); entry.adj.pop(); } };
+    const setUndoEnabled = ()=>{
+      if (!els.undoBtn) return;
+      els.undoBtn.disabled = ((state.history||[]).length===0) || state.raceStopped;
+    };
+
+    const undoLast = ()=>{
+      if (state.raceStopped) return;
+      const last = (state.history||[]).pop();
+      if (!last) { setUndoEnabled(); return; }
+      removeLastPass(last.bib);
+      if (last.toCol === null) {
+        state.cols[last.fromCol] = state.cols[last.fromCol] || [];
+        insertSorted(state.cols[last.fromCol], last.bib);
+      } else {
+        moveBib(last.toCol, last.fromCol, last.bib);
+      }
+      if (last.startedRace && participantsWithPass().length===0) state.raceStartMs = null;
+      checkAllFinished();
+      if (!state.raceStartMs) stopClock(true);
+      setUndoEnabled();
+      renderColumns(); renderTop(); renderResults(); updateRaceClock(); updateSettingsControls(); saveRun();
+    };
+    const insertSorted = (arr, bib) => {
+      if (!arr) return;
+      if (arr.includes(bib)) return;
+      let i = 0;
+      while (i < arr.length && arr[i] < bib) i++;
+      arr.splice(i, 0, bib);
+    };
+
+    const moveBib = (from,to,bib)=>{
+      if (from!=null) state.cols[from]=(state.cols[from]||[]).filter(x=>x!==bib);
+      if (to!=null){
+        state.cols[to]=state.cols[to]||[];
+        insertSorted(state.cols[to], bib);
+      }
+    };
+
+    const handleTap = (colIdx,bib)=>{
+      if (state.raceStopped) { showToast('Kilpailu on lopetettu.'); return; }
+      const now=Date.now();
+      const startedRace = (state.raceStartMs==null);
+      if(state.raceStartMs==null){ state.raceStartMs=now; startClock(); }
+      recordPass(bib,now);
+      const fromCol = colIdx;
+      const toCol = (colIdx < state.laps-1) ? (colIdx+1) : null;
+      state.history = state.history || [];
+      state.history.push({type:'tap', bib, fromCol, toCol, startedRace});
+      state.viewLapOverride = null;
+      if(colIdx<state.laps-1) moveBib(colIdx,colIdx+1,bib); else moveBib(colIdx,null,bib);
+      checkAllFinished();
+      setUndoEnabled();
+      renderColumns(); renderTop(); renderResults(); updateRaceClock(); updateSettingsControls(); saveRun();
+    };
+    const handleLongPress = (colIdx,bib)=>{ if(colIdx<=0) return; moveBib(colIdx,colIdx-1,bib); removeLastPass(bib); const anyPass=participantsWithPass().length>0; if(!anyPass){ state.raceStartMs=null; } checkAllFinished(); if(state.raceStartMs && state.raceStopMs==null) startClock(); else { updateRaceClock(); stopClock(); } renderColumns(); renderTop(); renderResults(); updateSettingsControls(); saveRun(); };
+
+    const setFollow = (bib)=>{ state.followBib=bib; saveSettings(); renderTop(); renderResults(); saveRun(); };
+
+    const initLists = (persist=true)=>{ state.cols=Array.from({length:state.laps},()=>[]); state.data.clear(); state.raceStartMs=null; state.finishedCount=0; for(let b=state.bibStart;b<=state.bibEnd;b++) state.cols[0].push(b); renderColumns(); renderTop(); renderResults(); updateRaceClock(); stopClock(); updateSettingsControls(); updateFinishedClass(); if(persist) saveRun(); };
+
+    // --------- Settings interactions ---------
+    const openSheet = ()=>{ els.sheet.classList.add('open'); if(els.gearBtn) els.gearBtn.style.display='none'; fillInputs(); updateSettingsControls(); };
+    const closeSheet = ()=>{ els.sheet.classList.remove('open'); if(els.gearBtn) els.gearBtn.style.display='grid'; };
+
+    // --------- Sheet drag-to-close (handle) ---------
+    (function attachSheetDrag(){
+      const sheet = els.sheet;
+      if (!sheet) return;
+      const handle = sheet.querySelector('.handle');
+      if (!handle) return;
+
+      let startY = 0;
+      let curY = 0;
+      let dragging = false;
+      const threshold = 70; // px
+
+      const resetStyle = ()=>{
+        sheet.style.transition = '';
+        sheet.style.transform = '';
+      };
+
+      const onStart = (y)=>{
+        if (!sheet.classList.contains('open')) return;
+        dragging = true;
+        startY = y;
+        curY = 0;
+        sheet.style.transition = 'none';
+      };
+
+      const onMove = (y)=>{
+        if (!dragging) return;
+        const dy = Math.max(0, y - startY);
+        curY = dy;
+        sheet.style.transform = `translateY(${dy}px)`;
+      };
+
+      const onEnd = ()=>{
+        if (!dragging) return;
+        dragging = false;
+        resetStyle();
+        if (curY > threshold) closeSheet();
+      };
+
+      // Pointer events (preferred where available)
+      const supportsPointer = 'PointerEvent' in window;
+      if (supportsPointer) {
+        handle.addEventListener('pointerdown', (e)=>{
+          if (e.pointerType === 'mouse' && e.button !== 0) return;
+          try{ e.preventDefault(); }catch{}
+          handle.setPointerCapture && handle.setPointerCapture(e.pointerId);
+          onStart(e.clientY);
+        }, {passive:false});
+
+        handle.addEventListener('pointermove', (e)=>{
+          if (!dragging) return;
+          try{ e.preventDefault(); }catch{}
+          onMove(e.clientY);
+        }, {passive:false});
+
+        const peEnd = (e)=>{
+          try{ e.preventDefault(); }catch{}
+          onEnd();
+        };
+        handle.addEventListener('pointerup', peEnd, {passive:false});
+        handle.addEventListener('pointercancel', peEnd, {passive:false});
+      }
+
+      // Touch fallback (iOS WebKit quirks)
+      handle.addEventListener('touchstart', (e)=>{
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        // Prevent page scroll / pull-to-refresh stealing the gesture
+        try{ e.preventDefault(); }catch{}
+        onStart(t.clientY);
+      }, {passive:false});
+
+      handle.addEventListener('touchmove', (e)=>{
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        try{ e.preventDefault(); }catch{}
+        onMove(t.clientY);
+      }, {passive:false});
+
+      handle.addEventListener('touchend', (e)=>{ try{ e.preventDefault(); }catch{} onEnd(); }, {passive:false});
+      handle.addEventListener('touchcancel', (e)=>{ try{ e.preventDefault(); }catch{} onEnd(); }, {passive:false});
+
+      // Mouse fallback (desktop)
+      handle.addEventListener('mousedown', (e)=>{
+        onStart(e.clientY);
+        const mm = (ev)=>onMove(ev.clientY);
+        const mu = ()=>{
+          document.removeEventListener('mousemove', mm);
+          document.removeEventListener('mouseup', mu);
+          onEnd();
+        };
+        document.addEventListener('mousemove', mm);
+        document.addEventListener('mouseup', mu);
+      });
+    })();
+
+    const fillInputs = ()=>{ els.inputs.bibStart.value=state.bibStart; els.inputs.bibEnd.value=state.bibEnd; els.inputs.interval.value=state.interval; els.inputs.laps.value=state.laps; els.inputs.followBib.value=state.followBib??''; els.inputs.followName.value=state.followName??''; els.inputs.compareBibs.value=(state.compareBibs||[]).join(', '); const cn=state.compareNames||{};
+
+ // --------- Start list import (paste -> Nro + Nimi) ---------
+ const parseStartList = (raw) => {
+   const text = String(raw || '').trim();
+   if (!text) return { map: {}, count: 0, errors: ['Tyhjä syöte.'] };
+
+   const lines = text.replace(/\r/g, '').split('\n').map(l => l.trim()).filter(Boolean);
+   if (!lines.length) return { map: {}, count: 0, errors: ['Tyhjä syöte.'] };
+
+   const errors = [];
+   const out = {};
+
+   // Detect tabular data (tabs in header)
+   const headerLine = lines[0];
+   const hasTabs = headerLine.includes('\t') || lines.some(l => l.includes('\t'));
+
+   const norm = (s) => String(s || '').toLowerCase().replace(/\s+/g,' ').trim();
+
+   if (hasTabs) {
+     // Find header row containing nro/numero and nimi/name
+     let hIdx = -1;
+     for (let i=0; i<Math.min(lines.length, 5); i++) {
+       const n = norm(lines[i]);
+       if ((n.includes('nro') || n.includes('numero') || n.includes('bib') || n.includes('nr')) && (n.includes('nimi') || n.includes('name'))) { hIdx = i; break; }
+     }
+     const hdr = (hIdx>=0 ? lines[hIdx] : lines[0]).split('\t').map(s => s.trim());
+     const hdrNorm = hdr.map(norm);
+     const nroIdx = hdrNorm.findIndex(c => c==='nro' || c==='numero' || c==='bib' || c==='nr' || c.includes('nro'));
+     const nimiIdx = hdrNorm.findIndex(c => c==='nimi' || c==='name' || c.includes('nimi') || c.includes('name'));
+
+     if (nroIdx === -1 || nimiIdx === -1) {
+       errors.push('Taulukon otsikoista ei löytynyt sarakkeita Nro ja Nimi.');
+     } else {
+       for (let i=(hIdx>=0 ? hIdx+1 : 1); i<lines.length; i++) {
+         const cols = lines[i].split('\t');
+         if (cols.length <= Math.max(nroIdx, nimiIdx)) continue;
+         const nroRaw = String(cols[nroIdx] || '').trim();
+         const nimiRaw = String(cols[nimiIdx] || '').trim();
+         const nro = Number(nroRaw);
+         if (!Number.isFinite(nro) || nro<=0) continue;
+         if (!nimiRaw) { errors.push(`Riviltä ${i+1} puuttuu nimi (#${nro}).`); continue; }
+         out[nro] = nimiRaw;
+       }
+     }
+   }
+
+   // Fallback: line-based parsing if nothing found
+   if (Object.keys(out).length === 0) {
+     for (let i=0; i<lines.length; i++) {
+       let l = lines[i];
+       // strip start time like 10:51 or 10:51:40
+       l = l.replace(/^\d{1,2}:\d{2}(?::\d{2})?\s+/, '');
+       // strip possible extra leading columns separated by tabs
+       if (l.includes('\t')) {
+         const parts = l.split('\t').map(s=>s.trim()).filter(Boolean);
+         if (parts.length >= 2) {
+           const nro = Number(parts[0]);
+           if (Number.isFinite(nro) && nro>0) { out[nro] = parts[1]; continue; }
+         }
+       }
+       const m = l.match(/^(\d{1,5})\s+(.+?)$/);
+       if (!m) continue;
+       const nro = Number(m[1]);
+       const nimi = String(m[2]).trim();
+       if (Number.isFinite(nro) && nro>0 && nimi) out[nro] = nimi;
+     }
+   }
+
+   const count = Object.keys(out).length;
+   if (count === 0 && errors.length === 0) errors.push('Yhtään kilpailunumeroa ja nimeä ei löytynyt.');
+   return { map: out, count, errors };
+ };
+
+ const applyStartListImport = () => {
+   const raw = els.inputs.startListImport ? els.inputs.startListImport.value : '';
+   const parsed = parseStartList(raw);
+   if (!parsed.count) {
+     showToast(parsed.errors[0] || 'Tuonti epäonnistui.');
+     return;
+   }
+
+   // Replace (korvaa) allNames
+   state.allNames = parsed.map;
+
+   // Update textarea for allNames
+   if (els.inputs.allNames) {
+     const lines = Object.keys(parsed.map).map(k => Number(k)).sort((a,b)=>a-b).map(n => `${n}=${parsed.map[n]}`);
+     els.inputs.allNames.value = lines.join('\n');
+   }
+
+   // Persist
+   saveRun();
+   showToast(`Tuotu ${parsed.count} nimeä (korvattu).`);
+ };
+
+ if (els.importStartListBtn) {
+   els.importStartListBtn.addEventListener('click', applyStartListImport, {passive:true});
+ }
+ const pairs=Object.keys(cn).map(k=>`${k}=${cn[k]}`); els.inputs.compareNames.value=pairs.join(', ');
+      if (els.inputs.allNames) { const an = state.allNames || {}; const ap = Object.keys(an).map(k => `${k}=${an[k]}`); els.inputs.allNames.value = ap.join('\n'); } };
+
+    els.gearBtn.addEventListener('click', openSheet, { passive:true });
+    if (els.undoBtn) {
+      els.undoBtn.addEventListener('click', ()=>undoLast(), { passive:true });
+      els.undoBtn.addEventListener('touchend', (e)=>{ e.preventDefault(); undoLast(); }, { passive:false });
+    }
+
+    // Help open/close fallback
+    const openHelp = () => { if (!els.sheet.classList.contains('open')) openSheet(); if (els.helpModal) els.helpModal.classList.add('open'); };
+    const closeHelp = () => { if (els.helpModal) els.helpModal.classList.remove('open'); };
+    if (els.helpBtn) els.helpBtn.addEventListener('click', openHelp, { passive:true });
+    if (els.helpCloseBtn) els.helpCloseBtn.addEventListener('click', closeHelp, { passive:true });
+    if (els.helpModal) els.helpModal.addEventListener('click', (e)=>{ if (e.target === els.helpModal) closeHelp(); }, { passive:true });
+
+
+    // Stop race modal handlers
+    const openStopRaceModal = ()=>{ const m=document.getElementById('stopRaceModal'); if(m) m.classList.add('open'); };
+    const closeStopRaceModal = ()=>{ const m=document.getElementById('stopRaceModal'); if(m) m.classList.remove('open'); };
+    if (els.stopRaceBtn) els.stopRaceBtn.addEventListener('click', ()=>{ openStopRaceModal(); }, {passive:true});
+
+    // stopRaceDelegate: modal buttons are after <script>, so use event delegation
+    const stopRaceDelegate = (e)=>{
+      const t = e.target.closest('#stopRaceCancelBtn, #stopRaceNoBtn, #stopRaceYesBtn, #stopRaceModal');
+      if (!t) return;
+      if (t.id==='stopRaceModal' && e.target===t) { closeStopRaceModal(); return; }
+      if (t.id==='stopRaceCancelBtn') { closeStopRaceModal(); return; }
+      if (t.id==='stopRaceNoBtn') { closeStopRaceModal(); stopRace(false); return; }
+      if (t.id==='stopRaceYesBtn') { closeStopRaceModal(); stopRace(true); return; }
+    };
+    document.addEventListener('click', stopRaceDelegate, {passive:true});
+    document.addEventListener('touchend', (e)=>{ try{ stopRaceDelegate(e); }catch{} }, {passive:true});
+
+    els.saveBtn.addEventListener('click', ()=>{
+      const bS=Number(els.inputs.bibStart.value), bE=Number(els.inputs.bibEnd.value), iv=Number(els.inputs.interval.value), lp=Math.max(1, Number(els.inputs.laps.value));
+      const fb=els.inputs.followBib.value.trim(), fn=els.inputs.followName.value.trim(); const comps=els.inputs.compareBibs.value.split(/[,\n;]/).map(s=>Number(String(s).trim())).filter(n=>Number.isFinite(n)); const compNames=parseCompareNames(els.inputs.compareNames.value);
+      const allNames=parseCompareNames(els.inputs.allNames ? els.inputs.allNames.value : '');
+      const running=isRaceRunning();
+      const oldBS = state.bibStart, oldBE = state.bibEnd, oldIV = state.interval, oldLaps = state.laps;
+      if(running){ if((Number.isFinite(bS)&&bS!==state.bibStart)||(Number.isFinite(bE)&&bE!==state.bibEnd)||(Number.isFinite(iv)&&iv!==state.interval)){ showToast('Kisa käynnissä: numeroväliä ja lähtöväliä ei voi muuttaa.'); fillInputs(); } }
+      else { if(Number.isFinite(bS)) state.bibStart=bS; if(Number.isFinite(bE)) state.bibEnd=bE; if(Number.isFinite(iv)) state.interval=iv; }
+      state.laps=Number.isFinite(lp)?Math.max(1,lp):state.laps; state.followBib=fb?Number(fb):null; state.followName=fn||''; state.compareBibs=comps; state.compareNames=compNames;
+      state.allNames=allNames;
+      const baseChanged = (!running) && (state.bibStart!==oldBS || state.bibEnd!==oldBE || state.interval!==oldIV || state.laps!==oldLaps);
+      if (baseChanged) {
+        state.history = [];
+        state.viewLapOverride = null;
+        state.raceStopped = false;
+        state.raceStopMs = null;
+        document.body.classList.remove('race-stopped');
+        initLists();
+      }
+      saveSettings(); renderColumns(); renderTop(); renderResults(); updateSettingsControls(); saveRun(); closeSheet();
+    });
+
+    // Custom confirm for iOS Edge/WebKit reliability
+    const confirmStop = ()=> new Promise(resolve=>{
+      openSheet(); // ensure modal sits above sheet
+      els.modal.classList.add('open');
+      const onOk = ()=>{ cleanup(); resolve(true); };
+      const onCancel = ()=>{ cleanup(); resolve(false); };
+      const cleanup = ()=>{ els.okBtn.removeEventListener('click', onOk); els.cancelBtn.removeEventListener('click', onCancel); closeModal(); };
+      els.okBtn.addEventListener('click', onOk, { once:true });
+      els.cancelBtn.addEventListener('click', onCancel, { once:true });
+    });
+
+    els.wipeAllBtn.addEventListener('click', async ()=>{
+      const ok = await confirmStop(); if(!ok) return;
+      try{ const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('skiTimer')) keys.push(k); } keys.forEach(k=>localStorage.removeItem(k)); }catch{}
+      Object.assign(state, DEFAULTS, {raceStartMs:null, cols:[], data:new Map(), finishedCount:0});
+      stopClock(true);
+      try { sessionStorage.removeItem(SESSION_KEY); } catch {}
+      // Hard reload to guarantee clean session in iOS Edge/WebKit
+      try{
+        if (document.visibilityState === 'visible') {
+          location.replace(location.href);
+          // If reload is throttled/blocked, also update UI as fallback
+          setTimeout(()=>{ initLists(false); closeSheet(); showToast('Kisa lopetettu. Oletukset palautettu.'); }, 400);
+        } else {
+          initLists(false); closeSheet(); showToast('Kisa lopetettu. Oletukset palautettu.');
+        }
+      }catch(e){ initLists(false); closeSheet(); showToast('Kisa lopetettu. Oletukset palautettu.'); }
+    }, { passive:true });
+
+    
+
+    // --------- Stop race + export ---------
+    const resolveName = (bib) => {
+      if (!bib && bib!==0) return '';
+      if (state.followBib === bib && (state.followName || (state.allNames && state.allNames[bib]))) return (state.followName || state.allNames[bib]);
+      if (state.compareNames && state.compareNames[bib]) return state.compareNames[bib];
+      if (state.allNames && state.allNames[bib]) return state.allNames[bib];
+      return '';
+    };
+
+    const exportResults = () => {
+      // One human-readable TXT file (UTF-8 with BOM for ä/ö/å compatibility)
+      const nowIso = new Date().toISOString();
+      const stamp = nowIso.replace(/[:.]/g,'-');
+      const baseName = `tulokset_${stamp}.txt`;
+
+      const headerLines = [];
+      headerLines.push('KILPAILUN TULOKSET');
+      headerLines.push(`Luotu:\t${nowIso}`);
+      headerLines.push(`Numeroväli:\t${state.bibStart}–${state.bibEnd}`);
+      headerLines.push(`Lähtöväli:\t${state.interval} s`);
+      headerLines.push(`Kierrokset:\t${state.laps}`);
+      if (state.followBib) {
+        const fn = resolveName(state.followBib);
+        headerLines.push(`Seurattava:\t#${state.followBib}${fn ? ' ' + fn : ''}`);
+      }
+      headerLines.push('');
+
+      const fmtRace = (ms) => {
+        if (!Number.isFinite(ms) || ms < 0) return '--:--.-';
+        return fmtT(ms);
+      };
+
+      // Map bib -> pass times as race-clock strings
+      const passClockMap = new Map();
+      const race0 = state.raceStartMs;
+      for (let bib=state.bibStart; bib<=state.bibEnd; bib++) {
+        const d = state.data.get(bib);
+        if (!d || !Array.isArray(d.passes) || d.passes.length===0) continue;
+        const clocks = d.passes.map(ms => (race0 ? fmtRace(ms - race0) : '--:--.-'));
+        passClockMap.set(bib, clocks);
+      }
+
+      const lines = [...headerLines];
+
+      for (let lap=1; lap<=state.laps; lap++) {
+        const {arr} = computePosition(lap);
+        const eligible = (arr||[]).filter(x => x.laps >= lap);
+        lines.push(`KIERROS ${lap}`);
+        if (eligible.length === 0) {
+          lines.push('Ei tuloksia.');
+          lines.push('');
+          continue;
+        }
+
+        const leaderAdj = Math.min(...eligible.map(x => x.adj));
+        lines.push('sija\tnumero\tnimi\tero kärkeen\tohitukset (kellonajat)');
+
+        eligible.forEach((x, idx) => {
+          const bib = x.bib;
+          const nm = resolveName(bib) || '';
+          const delta = x.adj - leaderAdj;
+          const deltaStr = (idx===0 || delta===0) ? '0:00.0' : (delta>0 ? ('+'+fmtRace(delta)) : ('-'+fmtRace(-delta)));
+          const clocks = (passClockMap.get(bib) || []).slice(0, lap);
+          const clockStr = clocks.length ? clocks.join(', ') : '';
+          lines.push(`${idx+1}\t${bib}\t${nm}\t${deltaStr}\t${clockStr}`);
+        });
+        lines.push('');
+      }
+
+      // Unfinished (optional)
+      const unfinished = [];
+      passClockMap.forEach((clocks, bib) => {
+        const d = state.data.get(bib);
+        const lapsDone = d ? d.passes.length : 0;
+        if (lapsDone < state.laps) unfinished.push({bib, nm: resolveName(bib) || '', lapsDone, clocks});
+      });
+      if (unfinished.length) {
+        lines.push('KESKEN (ei vielä kaikkia kierroksia)');
+        lines.push('numero\tnimi\tohituksia\tohitukset (kellonajat)');
+        unfinished.sort((a,b)=>a.bib-b.bib).forEach(u=>{
+          lines.push(`${u.bib}\t${u.nm}\t${u.lapsDone}/${state.laps}\t${u.clocks.join(', ')}`);
+        });
+        lines.push('');
+      }
+
+      // BOM as an actual character
+      const txt = '\ufeff' + lines.join('\n');
+      const file = new File([txt], baseName, {type:'text/plain;charset=utf-8'});
+
+      const download = () => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([txt], {type:'text/plain;charset=utf-8'}));
+        a.download = baseName;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+      };
+
+      try {
+        if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) {
+          // Promise-based share (no await)
+          navigator.share({title:'Tulokset', text:'Kilpailun tulokset (TXT)', files:[file]}).catch(()=>download());
+          return;
+        }
+      } catch(e) {}
+
+      download();
+    };
+
+    const stopRace = (doExport) => {
+      state.raceStopped = true;
+      state.raceStopMs = Date.now();
+      try{ if (typeof setUndoEnabled==='function') setUndoEnabled(); }catch{}
+      stopClock(true);
+      updateRaceClock();
+      document.body.classList.add('race-stopped');
+      updateSettingsControls();
+      saveRun();
+      if (doExport) exportResults();
+      showToast('Kilpailu lopetettu.');
+    };
+
+
+
+    // --------- Swipe results lap navigation (multiple laps) ---------
+    (function attachResultsSwipe(){
+      const el = els.resultsList;
+      if (!el) return;
+      let sx=0, sy=0, tracking=false;
+      el.addEventListener('touchstart', (e)=>{
+        if (state.laps <= 1) return;
+        const t = e.touches[0];
+        sx=t.clientX; sy=t.clientY; tracking=true;
+      }, {passive:true});
+      el.addEventListener('touchend', (e)=>{
+        if (!tracking || state.laps <= 1) return;
+        tracking=false;
+        const t = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0] : null;
+        if (!t) return;
+        const dx = t.clientX - sx;
+        const dy = t.clientY - sy;
+        if (Math.abs(dx) < 45 || Math.abs(dy) > 30) return;
+        const cur = getViewLap();
+        state.viewLapOverride = (dx > 0) ? clampLap(cur - 1) : clampLap(cur + 1);
+        renderResults();
+        showToast(`Tulosseuranta: kierros ${state.viewLapOverride}`);
+        saveRun();
+      }, {passive:true});
+    })();
+
+// --------- Boot & session semantics ---------
+    const startNewSession = ()=>{ try{ sessionStorage.setItem(SESSION_KEY,'active'); try{ if (typeof LEGACY_SESSION_KEY!=='undefined' && sessionStorage.getItem(LEGACY_SESSION_KEY)==='active') sessionStorage.removeItem(LEGACY_SESSION_KEY); }catch{} }catch{} };
+
+    const boot = ()=>{
+      let hasSession=false; try{ hasSession = (sessionStorage.getItem(SESSION_KEY)==='active') || (typeof LEGACY_SESSION_KEY!=='undefined' && sessionStorage.getItem(LEGACY_SESSION_KEY)==='active'); }catch{}
+      if(!hasSession){ try{ const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('skiTimer')) keys.push(k); } keys.forEach(k=>localStorage.removeItem(k)); }catch{} Object.assign(state, DEFAULTS, {raceStartMs:null, cols:[], data:new Map(), finishedCount:0}); initLists(false); startNewSession(); return; }
+      if(loadRun()){ renderColumns(); renderTop(); renderResults(); updateRaceClock(); updateSettingsControls(); updateFinishedClass(); if(state.raceStartMs && state.raceStopMs==null) startClock(); }
+      else { loadSettings(); initLists(); }
+    };
+
+    window.addEventListener('pageshow', ()=>{ // iOS back-forward cache safety
+      updateRaceClock();
+    });
+
+    window.addEventListener('beforeunload', ()=>{ try{ if(sessionStorage.getItem(SESSION_KEY)==='active'){ saveRun(); saveSettings(); } }catch{} });
+
+    boot();
+  try{ if (els.gearBtn) els.gearBtn.style.display='grid'; }catch{}
+  try{ if (state.raceStopped) document.body.classList.add('race-stopped'); }catch{}
+  try{ if (typeof setUndoEnabled==='function') setUndoEnabled(); }catch{}
+  </script>
+
+  <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="card" tabindex="-1">
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.1)</h3>
+      <p style="margin-top:0">Lyhyt käyttöohje:</p>
+      <ul style="margin:0 0 10px 18px;line-height:1.45">
+  <li>Avaa <b>Asetukset</b> (⚙️) ja määritä: <b>kilpailunumeroiden väli</b>, <b>väliaikalähdön aikaväli</b> ja <b>kierrosten määrä</b>.</li>
+  <li><b>Tuo lähtölista (nopein)</b>: Kopioi lähtölista (taulukko tai teksti) nettisivulta/Excelistä ja liitä kohtaan <b>Tuo lähtölista</b>. Paina <b>Poimi numerot ja nimet (korvaa)</b> — tämä <u>korvaa</u> Kaikkien nimet -listan.</li>
+  <li>Vaihtoehtoisesti voit syöttää nimet käsin kohtaan <b>Kaikkien nimet</b> muodossa <code>numero=nimi</code>, yksi per rivi.</li>
+  <li>Valitse halutessasi <b>Seurattava</b> (numero ja nimi) ja lisää <b>Vertailtavat</b> (numerot + nimet).</li>
+  <li>Kirjaa ohitus: napauta kilpailijan numeroa oikeassa <b>kierros</b>-sarakkeessa. Numero siirtyy automaattisesti seuraavaan kierrokseen.</li>
+  <li>Peru viimeisin kirjaus: paina <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua myös pitkällä painalluksella (siirtää takaisin edelliseen kierrokseen).</li>
+  <li><b>Tulosseuranta</b> näyttää erot kärkeen valitulta kierrokselta. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä tuloslistaa vasemmalle/oikealle.</li>
+  <li>Tuloslistan napautus <u>ei vaihda seurattavaa</u> — se vain vierittää näkyviin seurattavan rivin.</li>
+  <li><b>Lopeta kilpailu</b>: Asetuksista voit lopettaa kilpailun ja (valintasi mukaan) tallentaa tulokset TXT-tiedostoon. Lopetuksen jälkeen uusia kirjauksia ei voi tehdä.</li>
+  <li>Kun <b>kaikki kilpailijat ovat valmiit</b> ja numerot on klikattu pois, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
+  <li>Asetukset sulkeutuvat vetämällä paneelia alas <b>kahvasta</b>.</li>
+  <li>Välilehden <b>sulkeminen</b> aloittaa puhtaalta pöydältä. Välilehden <b>päivitys</b> jatkaa samaa sessiota.</li>
+</ul>
+      <div class="row">
+        <button class="btn" id="helpCloseBtn" onclick="(function(){var m=document.getElementById('helpModal'); if(m) m.classList.remove('open');})();">Sulje</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal" id="stopRaceModal" role="dialog" aria-modal="true" aria-labelledby="stopRaceTitle">
+    <div class="card">
+      <h3 id="stopRaceTitle">Haluatko tallentaa tulokset tiedostoon?</h3>
+      <p>Tämä lopettaa kilpailun: uusia kirjauksia ei voi tehdä ja aika pysähtyy. Tulokset säilyvät tarkastelua varten.</p>
+      <div class="row" style="justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="stopRaceCancelBtn" type="button">Peruuta</button>
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex:1;flex-wrap:wrap">
+          <button class="btn" id="stopRaceNoBtn" type="button">Ei</button>
+          <button class="btn primary" id="stopRaceYesBtn" type="button">Kyllä</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
