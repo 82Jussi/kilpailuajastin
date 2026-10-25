@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark light" />
+  <meta name="theme-color" content="#04070c" />
+  <title>Kilpailuajastin (4.2)</title>
+  <script>
+    // Aseta teema heti (ei välähdystä). Valinta tallennetaan avaimella 'kaTheme' (ei tyhjene uuden session alussa).
+    (function(){
+      var d='dark';
+      try{
+        var m=localStorage.getItem('kaTheme')||'auto';
+        d = m==='auto' ? ((window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches)?'light':'dark') : (m==='light'?'light':'dark');
+      }catch(e){}
+      document.documentElement.setAttribute('data-theme', d);
+    })();
+  </script>
+  <style>
+    /* ===================== TEEMAT ===================== */
+    /* Tumma: pimeään / hämärään (OLED-musta tausta, korkea kontrasti) */
+    :root, html[data-theme="dark"]{
+      --bg:#04070c; --panel:#0d1522; --panel-2:#0a111c; --line:#2a3a54; --text:#f5f8ff; --sub:#bcc8dc; --accent:#7aa7ff;
+      --good:#3deba0; --bad:#ff8593; --neutral:#e5eaf3;
+      --chip-bg:#14203a; --chip-line:#33486e;
+      --btn-bg:#1d2f52; --btn-line:#4a6798; --btn-text:#f5f8ff;
+      --prim-bg:#3c6dff; --prim-line:#6d92ff; --prim-text:#ffffff;
+      --dan-bg:#8a2438; --dan-line:#d1566e; --dan-text:#ffffff;
+      --bib-bg:#1b2d4e; --bib-line:#4a6aa0; --bib-text:#ffffff;
+      --fol-bg:rgba(46,213,115,.26); --fol-line:#2ed573;
+      --cmp-bg:rgba(255,221,87,.22); --cmp-line:#ffdd57;
+      --input-bg:#121d31; --input-line:#3b5078; --input-text:#f5f8ff; --dis-bg:#0f1827; --dis-text:#8aa0c0;
+      --modal-bg:rgba(0,0,0,.72); --toast-bg:#1b2b49; --toast-text:#ffffff;
+      --banner-bg:rgba(255,90,107,.25); --banner-line:#ff5a6b; --banner-text:#ffd9de;
+      --badge-bg:#263a63; --badge-line:#3b5688; --badge-text:#e3ecff;
+      --shadow:0 4px 16px rgba(0,0,0,.45);
+      --gear-bg:#22386a;
+    }
+    /* Aurinko: kirkkaaseen päivänvaloon (vaalea, matta tausta, musta teksti, tummat värit, vahvat reunat) */
+    html[data-theme="light"]{
+      --bg:#eef1f6; --panel:#ffffff; --panel-2:#ffffff; --line:#8d99ad; --text:#0b1220; --sub:#38465e; --accent:#0b57d0;
+      --good:#046c2e; --bad:#b00020; --neutral:#1f2937;
+      --chip-bg:#ffffff; --chip-line:#5b6b85;
+      --btn-bg:#e4eafa; --btn-line:#3a4a6b; --btn-text:#0b1220;
+      --prim-bg:#0b57d0; --prim-line:#08409c; --prim-text:#ffffff;
+      --dan-bg:#b00020; --dan-line:#7f0017; --dan-text:#ffffff;
+      --bib-bg:#dfe9ff; --bib-line:#1c3f8f; --bib-text:#0b1220;
+      --fol-bg:#c3f0d2; --fol-line:#046c2e;
+      --cmp-bg:#ffe9a3; --cmp-line:#8a6100;
+      --input-bg:#ffffff; --input-line:#5b6b85; --input-text:#0b1220; --dis-bg:#e3e7ee; --dis-text:#5d6a80;
+      --modal-bg:rgba(15,23,42,.55); --toast-bg:#111827; --toast-text:#ffffff;
+      --banner-bg:#ffd9de; --banner-line:#b00020; --banner-text:#7a0014;
+      --badge-bg:#dbe6ff; --badge-line:#1c3f8f; --badge-text:#0b1220;
+      --shadow:0 2px 8px rgba(15,23,42,.25);
+      --gear-bg:#0b57d0;
+    }
+
+    /* ===================== PERUSTA ===================== */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font-size:16px;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,Cantarell,"Noto Sans",Arial,sans-serif;
+      overscroll-behavior:none;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    button{font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+    .app{display:grid;grid-template-rows:auto minmax(0,1fr);height:100vh;height:100dvh;overflow:hidden;
+      padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+
+    /* ===================== YLÄPALKKI ===================== */
+    .tracking{display:flex;flex-direction:column;gap:6px;min-height:0;max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      background:var(--panel);border-bottom:2px solid var(--line);padding:calc(6px + env(safe-area-inset-top)) 12px 8px}
+    .head{display:flex;gap:10px;align-items:center}
+    .title{flex:1;min-width:0;display:flex;flex-direction:column;color:var(--sub);font-size:13px;font-weight:600;line-height:1.25}
+    .title .follow{font-weight:800;color:var(--text);font-size:20px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .pos{background:var(--chip-bg);border:1px solid var(--chip-line);border-radius:10px;padding:3px 10px;font-size:14px;font-weight:800;color:var(--text);white-space:nowrap}
+    .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .chip{display:inline-flex;align-items:center;gap:8px;background:var(--chip-bg);border:1px solid var(--chip-line);padding:4px 12px;border-radius:999px;
+      font-variant-numeric:tabular-nums;box-shadow:var(--shadow);user-select:none;-webkit-user-select:none}
+    .chip .label{color:var(--sub);font-size:13px;font-weight:600}
+    .chip .val{font-weight:800;font-size:18px;letter-spacing:.2px}
+    .chip.good .val{color:var(--good)} .chip.bad .val{color:var(--bad)} .chip.neutral .val{color:var(--neutral)}
+    .chip.clock .val{font-size:26px;color:var(--text)}
+    .lap-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:14px;font-weight:700;color:var(--badge-text);background:var(--badge-bg);border:1px solid var(--badge-line);white-space:nowrap}
+    .prev-row{display:none;flex-wrap:wrap;gap:8px;align-items:center;opacity:.8}
+    .prev-row .label{font-size:13px;color:var(--sub);font-weight:600}
+    .prev-row .chip{box-shadow:none}
+    .prev-row .chip .val{font-size:17px}
+
+    #undoBtn{flex:none;min-height:48px;padding:10px 16px;border-radius:999px;font-size:17px;font-weight:700;color:var(--btn-text);background:var(--btn-bg);border:2px solid var(--btn-line)}
+    #undoBtn[disabled]{opacity:.4}
+    #stoppedBanner{display:none;padding:8px 10px;border-radius:12px;background:var(--banner-bg);border:2px solid var(--banner-line);color:var(--banner-text);font-weight:800;letter-spacing:.6px;text-align:center}
+    body.race-stopped #stoppedBanner{display:block}
+    body.race-stopped #undoBtn{display:none}
+
+    /* ===================== TULOSSEURANTA ===================== */
+    .results{display:flex;flex-direction:column;min-height:0;background:var(--panel-2);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+    .results h4{margin:0;padding:6px 12px;font-size:14px;color:var(--sub);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+    .results .list{max-height:24dvh;overflow:auto;-webkit-overflow-scrolling:touch}
+    .res-item{display:grid;grid-template-columns:32px 1fr auto;gap:8px;align-items:center;padding:6px 12px;border-bottom:1px dashed var(--line)}
+    .res-item:last-child{border-bottom:none}
+    .res-item .rank{text-align:right;font-weight:700}
+    .res-item .bib{font-weight:800;font-size:16px;overflow-wrap:anywhere}
+    .res-item .name{color:var(--sub);font-size:13px}
+    .res-item .time{font-variant-numeric:tabular-nums;font-weight:700;font-size:17px}
+    .res-item.follow{background:var(--fol-bg);box-shadow:inset 5px 0 0 0 var(--fol-line)}
+    .res-item.compare{background:var(--cmp-bg);box-shadow:inset 5px 0 0 0 var(--cmp-line)}
+
+    /* ===================== NUMEROT ===================== */
+    :root{ --bibSize:clamp(60px, 9.5dvh, 84px); --bibMin:clamp(72px, 12vw, 110px); }
+    .main{min-height:0;padding:10px 10px calc(86px + env(safe-area-inset-bottom))}
+    .columns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;height:100%;min-height:0}
+    .col{display:flex;flex-direction:column;min-height:0;background:var(--panel);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+    .col h3{margin:0;font-size:15px;font-weight:800;padding:9px 12px;color:var(--text);border-bottom:2px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+    .col h3 .count{color:var(--sub);font-weight:700}
+    .col .list{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;padding:8px;display:grid;gap:8px;touch-action:pan-y;
+      grid-auto-rows:var(--bibSize);align-content:start;grid-template-columns:repeat(auto-fit, minmax(var(--bibMin), 1fr))}
+    .bibbtn{display:flex;align-items:center;justify-content:center;width:100%;height:var(--bibSize);padding:0 6px;border-radius:12px;
+      background:var(--bib-bg);border:2px solid var(--bib-line);color:var(--bib-text);font-size:clamp(22px, 5.5vw, 28px);font-weight:800;font-variant-numeric:tabular-nums;
+      box-shadow:var(--shadow);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+    .bibbtn.pressed{transform:scale(.96);filter:brightness(1.25)}
+    html[data-theme="light"] .bibbtn.pressed{filter:brightness(.88)}
+    .bibbtn.following{outline:4px solid var(--accent);outline-offset:1px}
+
+    /* ===================== ASETUKSET ===================== */
+    .gear{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));z-index:60;width:60px;height:60px;border-radius:50%;
+      background:var(--gear-bg);border:2px solid var(--btn-line);display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.4)}
+    .gear svg{width:30px;height:30px;fill:none;stroke:#ffffff;stroke-width:1.7px}
+    .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:2px solid var(--line);border-top-left-radius:18px;border-top-right-radius:18px;
+      box-shadow:0 -10px 30px rgba(0,0,0,.5);transform:translateY(110%);visibility:hidden;transition:transform 280ms ease, visibility 0s linear 280ms;z-index:6;color:var(--text)}
+    .sheet.open{transform:translateY(0);visibility:visible;transition:transform 280ms ease, visibility 0s}
+    .sheet .handle{display:grid;place-items:center;padding:12px 0 14px;touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+    .sheet .handle span{display:inline-block;width:56px;height:5px;border-radius:999px;background:var(--line)}
+    .sheet .content{padding:2px 14px calc(16px + env(safe-area-inset-bottom));max-height:72dvh;overflow:auto;-webkit-overflow-scrolling:touch}
+    .sheet h2{margin:4px 2px 12px;font-size:20px}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .mt{margin-top:10px}
+    label{font-size:14px;font-weight:600;color:var(--sub);display:block;margin-bottom:6px}
+    input,textarea{width:100%;padding:12px;border-radius:12px;border:2px solid var(--input-line);background:var(--input-bg);color:var(--input-text);font-size:16px;font-family:inherit}
+    input:focus,textarea:focus{outline:3px solid var(--accent);outline-offset:1px}
+    input[disabled]{background:var(--dis-bg);border-color:var(--line);color:var(--dis-text)}
+    textarea{min-height:110px;resize:vertical}
+    .hint{margin-top:6px;font-size:13px;color:var(--sub)}
+    .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-top:12px}
+    .actions.end{justify-content:flex-end}
+    .btn{min-height:48px;padding:10px 14px;border-radius:12px;border:2px solid var(--btn-line);background:var(--btn-bg);color:var(--btn-text);font-weight:700;font-size:16px}
+    .btn.primary{background:var(--prim-bg);border-color:var(--prim-line);color:var(--prim-text)}
+    .btn.danger{background:var(--dan-bg);border-color:var(--dan-line);color:var(--dan-text)}
+    #saveBtn{order:-1;flex:1 1 100%;font-size:18px;min-height:54px}
+    .seg{display:flex;gap:8px}
+    .seg button{flex:1;min-height:48px;border-radius:12px;border:2px solid var(--btn-line);background:var(--btn-bg);color:var(--btn-text);font-weight:700;font-size:15px}
+    .seg button[aria-pressed="true"]{background:var(--prim-bg);border-color:var(--prim-line);color:var(--prim-text)}
+
+    /* ===================== TOAST & MODAALIT ===================== */
+    .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));max-width:80vw;text-align:center;transform:translateX(-50%) translateY(140%);
+      background:var(--toast-bg);color:var(--toast-text);border:1px solid var(--line);padding:12px 16px;border-radius:12px;font-weight:600;z-index:40;
+      box-shadow:0 10px 30px rgba(0,0,0,.45);transition:transform .25s ease, opacity .25s ease;opacity:0;pointer-events:none}
+    .toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+    .modal{position:fixed;inset:0;background:var(--modal-bg);display:none;place-items:center;z-index:50}
+    .modal.open{display:grid}
+    .modal .card{background:var(--panel);color:var(--text);border:2px solid var(--line);border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.55);padding:16px;max-width:420px;width:92vw}
+    .modal h3{margin:4px 0 8px;font-size:19px}
+    .modal p{margin:0 0 12px;color:var(--sub);font-size:15px;line-height:1.4}
+    .modal .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+    .modal .btn{min-width:110px}
+    #helpModal .card{max-height:82dvh;overflow:hidden;display:flex;flex-direction:column}
+    #helpModal .card > ul{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:6px;margin:0 0 10px 18px;line-height:1.45;font-size:15px}
+    #helpModal .card .row{margin-top:10px}
+
+    /* ===================== KAIKKI VALMIITA ===================== */
+    body.all-finished .main{display:none}
+    body.all-finished .app{grid-template-rows:minmax(0,1fr)}
+    body.all-finished .tracking{max-height:none}
+    body.all-finished .results{flex:1}
+    body.all-finished .results .list{max-height:none;flex:1}
+
+    /* ===================== VAAKA-ASENTO ===================== */
+    @media (orientation: landscape){
+      .app{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-rows:minmax(0,1fr)}
+      :root{--bibSize:clamp(54px, 15dvh, 80px); --bibMin:90px}
+      .tracking{max-height:none;height:100dvh;border-right:2px solid var(--line);border-bottom:none;padding-bottom:84px}
+      .results{flex:1}
+      .results .list{max-height:none;flex:1}
+      .main{height:100dvh;padding:10px}
+      .gear{right:auto;left:calc(14px + env(safe-area-inset-left))}
+      body.all-finished .app{grid-template-columns:minmax(0,1fr)}
+    }
+    @media (prefers-reduced-motion: reduce){ .sheet,.toast{transition:none} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="tracking" id="tracking">
+      <div id="stoppedBanner">KILPAILU LOPETETTU</div>
+      <div class="head">
+        <div class="title"><span>Seurattava:</span><span class="follow" id="followLabel">–</span></div>
+        <button class="btn" id="undoBtn" type="button" disabled aria-label="Peruuta viimeisin kirjaus">↶ Peruuta</button>
+      </div>
+      <div class="chips" id="topChips">
+        <div class="chip clock" id="raceClockChip"><span class="label">Kisan aika</span><span class="val" id="raceClock">--:--.-</span></div>
+        <span class="lap-badge" id="lapBadge" style="display:none"></span>
+        <span class="pos" id="posLabel">Sijoitus: –</span>
+      </div>
+      <div class="prev-row" id="prevRow"><span class="label" id="prevLabel"></span><div class="chips" id="prevChips"></div></div>
+      <div class="results" id="results">
+        <h4>Tulosseuranta (ero kärkeen) <span class="lap-badge" id="resultsLapBadge" style="display:none"></span></h4>
+        <div class="list" id="resultsList"></div>
+      </div>
+    </div>
+    <div class="main"><div class="columns" id="columns"></div></div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <button class="gear" id="gearBtn" type="button" aria-label="Asetukset">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a7.8 7.8 0 0 0 .06-1l2.02-1.57a.6.6 0 0 0 .14-.77l-1.92-3.33a.6.6 0 0 0-.72-.27l-2.34.94a.6.6 0 0 0-.86-.5l-.35-2.49a.6.6 0 0 0-.6-.51H9.13a.6.6 0 0 0-.6.51l-.35 2.49c-.29.14-.57.31-.86.5l-2.34-.94a.6.6 0 0 0-.72.27L2.34 10.1a.6.6 0 0 0 .14.77L4.5 12.44c-.01.17-.02.34-.02.51 0 .17.01.34.02.51l-2.02 1.57a.6.6 0 0 0-.14.77l1.92 3.33a.6.6 0 0 0 .72.27l2.34-.94c.27.19.56.36.86.5l.35 2.49c.05.3.31.51.6.51h3.98c.3 0 .55-.21.6-.51l.35-2.49c.29-.14.58-.31.86-.5l2.34.94c.28.11.61 0 .72-.27l1.92-3.33a.6.6 0 0 0-.14-.77L19.46 15Z"/></svg>
+  </button>
+
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <div class="handle" id="sheetHandle"><span></span></div>
+    <div class="content">
+      <h2>Asetukset</h2>
+
+      <label>Ulkoasu</label>
+      <div class="seg" id="themeSeg" role="group" aria-label="Ulkoasu">
+        <button type="button" data-theme-opt="auto" aria-pressed="false">Auto</button>
+        <button type="button" data-theme-opt="dark" aria-pressed="false">🌙 Tumma</button>
+        <button type="button" data-theme-opt="light" aria-pressed="false">☀ Aurinko</button>
+      </div>
+
+      <div class="grid2 mt">
+        <div><label for="bibStart">Kilpailunumero – alku</label><input id="bibStart" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="bibEnd">Kilpailunumero – loppu</label><input id="bibEnd" type="number" inputmode="numeric" min="0" /></div>
+      </div>
+      <div class="grid2 mt">
+        <div><label for="interval">Väliaikalähdön aikaväli (s)</label><input id="interval" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="laps">Kierrosten määrä</label><input id="laps" type="number" inputmode="numeric" min="1" /></div>
+      </div>
+      <div class="grid2 mt">
+        <div><label for="followBib">Seurattava kilpailunumero</label><input id="followBib" type="number" inputmode="numeric" min="0" /></div>
+        <div><label for="followName">Seurattavan nimi (valinnainen)</label><input id="followName" type="text" placeholder="Esim. K. Niskanen" /></div>
+      </div>
+      <div class="mt"><label for="compareBibs">Vertailunumerot (pilkuilla eroteltu)</label><input id="compareBibs" type="text" placeholder="2, 3, 4" /></div>
+      <div class="mt"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="2=A. Virtanen, 3=E. Heikkinen" /></div>
+      <div class="mt"><label for="allNames">Kaikkien nimet (numero=nimi, …)</label><textarea id="allNames" placeholder="1=Etunimi Sukunimi&#10;2=Etunimi Sukunimi"></textarea></div>
+      <div class="mt">
+        <label for="startListImport">Tuo lähtölista (kopioi–liitä)</label>
+        <textarea id="startListImport" placeholder="Liitä lähtölista tähän. Voit liittää taulukon (tabit) tai rivimuotoisen listan.&#10;Esim: 117 Petra Rautiainen"></textarea>
+        <div class="actions end"><button class="btn" id="importStartListBtn" type="button">Poimi numerot ja nimet (korvaa)</button></div>
+        <div class="hint">Vinkki: Kopioi lähtölista esim. nettisivulta/Excelistä ja liitä tähän. Ohjelma poimii sarakkeet <b>Nro</b> ja <b>Nimi</b>.</div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="helpBtn" type="button">Ohje</button>
+        <button class="btn" id="stopRaceBtn" type="button">Lopeta kilpailu</button>
+        <button class="btn danger" id="wipeAllBtn" type="button">Lopeta kisa ja palauta kaikki oletukset</button>
+        <button class="btn primary" id="saveBtn" type="button">Tallenna</button>
+      </div>
+      <div class="hint" id="lockHint" style="display:none">* Kisa käynnissä: numeroväliä ja lähtöväliä ei voi muuttaa.</div>
+    </div>
+  </div>
+
+  <!-- Yleinen vahvistusikkuna -->
+  <div class="modal" id="confirmModal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="card">
+      <h3 id="confirmTitle"></h3>
+      <p id="confirmText"></p>
+      <div class="row">
+        <button class="btn" id="cancelBtn" type="button">Peru</button>
+        <button class="btn danger" id="okBtn" type="button">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="card" tabindex="-1">
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.2)</h3>
+      <p style="margin-top:0">Lyhyt käyttöohje:</p>
+      <ul>
+        <li>Avaa <b>Asetukset</b> (⚙️) ja määritä: <b>kilpailunumeroiden väli</b>, <b>väliaikalähdön aikaväli</b> ja <b>kierrosten määrä</b>.</li>
+        <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
+        <li><b>Tuo lähtölista (nopein)</b>: Kopioi lähtölista (taulukko tai teksti) nettisivulta/Excelistä ja liitä kohtaan <b>Tuo lähtölista</b>. Paina <b>Poimi numerot ja nimet (korvaa)</b> — tämä <u>korvaa</u> Kaikkien nimet -listan.</li>
+        <li>Vaihtoehtoisesti voit syöttää nimet käsin kohtaan <b>Kaikkien nimet</b> muodossa <code>numero=nimi</code>, yksi per rivi.</li>
+        <li>Valitse halutessasi <b>Seurattava</b> (numero ja nimi) ja lisää <b>Vertailtavat</b> (numerot + nimet).</li>
+        <li>Kirjaa ohitus: napauta kilpailijan numeroa oikeassa <b>kierros</b>-sarakkeessa. Numero siirtyy automaattisesti seuraavaan kierrokseen. Aika kirjataan kosketuksen alkuhetkellä.</li>
+        <li>Peru viimeisin kirjaus: paina <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua myös pitkällä painalluksella (siirtää takaisin edelliseen kierrokseen).</li>
+        <li><b>Tulosseuranta</b> näyttää erot kärkeen valitulta kierrokselta. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä tuloslistaa vasemmalle/oikealle.</li>
+        <li>Tuloslistan napautus <u>ei vaihda seurattavaa</u> — se vain vierittää näkyviin seurattavan rivin.</li>
+        <li><b>Lopeta kilpailu</b>: Asetuksista voit lopettaa kilpailun ja (valintasi mukaan) tallentaa tulokset TXT-tiedostoon. Lopetuksen jälkeen uusia kirjauksia ei voi tehdä.</li>
+        <li>Kun <b>kaikki kilpailijat ovat valmiit</b> ja numerot on klikattu pois, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
+        <li>Asetukset sulkeutuvat vetämällä paneelia alas <b>kahvasta</b>.</li>
+        <li><b>Päivitys</b> jatkaa samaa kisaa. Jos välilehti suljetaan ja sivu avataan uudelleen, ohjelma kysyy, jatketaanko edellistä kisaa vai aloitetaanko alusta.</li>
+        <li>Näyttö pysyy päällä, kun selain sallii sen (vaatii yleensä https-yhteyden).</li>
+      </ul>
+      <div class="row"><button class="btn" id="helpCloseBtn" type="button">Sulje</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="stopRaceModal" role="dialog" aria-modal="true" aria-labelledby="stopRaceTitle">
+    <div class="card">
+      <h3 id="stopRaceTitle">Lopetetaanko kilpailu?</h3>
+      <p>Uusia kirjauksia ei voi tehdä lopetuksen jälkeen ja aika pysähtyy. Tulokset säilyvät tarkastelua varten. Haluatko tallentaa tulokset tiedostoon?</p>
+      <div class="row" style="justify-content:space-between">
+        <button class="btn" id="stopRaceCancelBtn" type="button">Peruuta</button>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;flex:1">
+          <button class="btn" id="stopRaceNoBtn" type="button">Lopeta vain</button>
+          <button class="btn primary" id="stopRaceYesBtn" type="button">Lopeta ja tallenna</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  'use strict';
+  // ===================== Vakiot & avaimet =====================
+  const makeDefaults = () => ({ bibStart:1, bibEnd:10, interval:30, laps:1, followBib:null, followName:'', compareBibs:[], compareNames:{}, allNames:{} });
+  const MAX_LAPS = 20, MAX_BIBS = 2000, LONG_PRESS_MS = 600, MOVE_PX = 10, RESUME_MAX_AGE_MS = 12*3600*1000;
+  const STORAGE_SETTINGS_KEY = 'skiTimerSettingsV4.1';
+  const STORAGE_RUN_KEY      = 'skiTimerRun_V4.1';
+  const SESSION_KEY          = 'skiTimerSessionV4.1';
+  const LEGACY_SETTINGS_KEY  = 'skiTimerSettingsV4.0';
+  const LEGACY_RUN_KEY       = 'skiTimerRun_V4.0';
+  const LEGACY_SESSION_KEY   = 'skiTimerSessionV4.0';
+  const THEME_KEY            = 'kaTheme';
+
+  // ===================== Tila =====================
+  const state = { ...makeDefaults(), raceStartMs:null, cols:[], data:new Map(), finishedCount:0, history:[], viewLapOverride:null, raceStopped:false, raceStopMs:null };
+  const $ = (id) => document.getElementById(id);
+  const els = {
+    columns:$('columns'), followLabel:$('followLabel'), posLabel:$('posLabel'), topChips:$('topChips'), lapBadge:$('lapBadge'),
+    prevRow:$('prevRow'), prevLabel:$('prevLabel'), prevChips:$('prevChips'), raceClock:$('raceClock'),
+    resultsList:$('resultsList'), resultsLapBadge:$('resultsLapBadge'), sheet:$('sheet'), gearBtn:$('gearBtn'),
+    undoBtn:$('undoBtn'), lockHint:$('lockHint'), saveBtn:$('saveBtn'), wipeAllBtn:$('wipeAllBtn'), toast:$('toast'),
+    helpBtn:$('helpBtn'), helpModal:$('helpModal'), helpCloseBtn:$('helpCloseBtn'),
+    importStartListBtn:$('importStartListBtn'), stopRaceBtn:$('stopRaceBtn'), stopRaceModal:$('stopRaceModal'),
+    inputs:{ bibStart:$('bibStart'), bibEnd:$('bibEnd'), interval:$('interval'), laps:$('laps'), followBib:$('followBib'), followName:$('followName'),
+             compareBibs:$('compareBibs'), compareNames:$('compareNames'), allNames:$('allNames'), startListImport:$('startListImport') }
+  };
+
+  // ===================== Apufunktiot =====================
+  const pad = (n,w=2) => String(n).padStart(w,'0');
+  const fmtT = (ms) => { if(!Number.isFinite(ms)) return '--:--.-'; const t=Math.max(0,Math.floor(ms)); const tenths=Math.floor((t%1000)/100); const s=Math.floor(t/1000); return `${pad(Math.floor(s/60))}:${pad(s%60)}.${tenths}`; };
+  const fmtLocal = (d) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  const labelForCol = (i) => `${i+1}. kierros`;
+  // 0 on kelvollinen arvo (ei käytetä || -operaattoria numeroille)
+  const numOr = (v, d) => { if (v===null || v===undefined || (typeof v==='string' && v.trim()==='')) return d; const n=Number(v); return Number.isFinite(n) ? n : d; };
+  const hasFollow = () => Number.isFinite(state.followBib);
+  const parseNumList = (txt) => String(txt||'').split(/[,;\s]+/).filter(Boolean).map(Number).filter(n => Number.isInteger(n) && n>=0);
+  // "1=Nimi, 2=Toinen; 3=Kolmas" tai yksi per rivi. Nimessä saa olla pilkku ("5=Virtanen, Matti").
+  const parseNameMap = (txt) => {
+    const map = {};
+    String(txt||'').split(/[\n;]/).forEach(line => {
+      let lastKey = null;
+      line.split(',').forEach(part => {
+        const m = part.match(/^\s*(\d+)\s*=\s*(.*)$/);
+        if (m) { const name=m[2].trim(); if (name) { map[Number(m[1])]=name; lastKey=Number(m[1]); } else lastKey=null; }
+        else if (lastKey!==null && part.trim()) map[lastKey] += ', ' + part.trim();
+      });
+    });
+    return map;
+  };
+  const resolveDisplayName = (bib) => {
+    if (!Number.isFinite(bib)) return '';
+    if (state.followBib===bib && state.followName) return state.followName;
+    return (state.compareNames && state.compareNames[bib]) || (state.allNames && state.allNames[bib]) || '';
+  };
+  let toastTimer = null;
+  const showToast = (msg, ms=2200) => { els.toast.textContent = msg; els.toast.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(()=>els.toast.classList.remove('show'), ms); };
+  const vibrate = (ms) => { try{ if (navigator.vibrate) navigator.vibrate(ms); }catch{} };
+
+  // Yleinen vahvistusikkuna (Promise)
+  const askConfirm = ({title, text, ok='OK', cancel='Peru', danger=true}) => new Promise(resolve => {
+    const m=$('confirmModal'), okB=$('okBtn'), cB=$('cancelBtn');
+    $('confirmTitle').textContent=title; $('confirmText').textContent=text; okB.textContent=ok; cB.textContent=cancel;
+    okB.className = danger ? 'btn danger' : 'btn primary';
+    const done = (v) => { m.classList.remove('open'); okB.onclick=null; cB.onclick=null; m.onclick=null; resolve(v); };
+    okB.onclick = () => done(true); cB.onclick = () => done(false); m.onclick = (e) => { if (e.target===m) done(false); };
+    m.classList.add('open');
+  });
+
+  // ===================== Teema =====================
+  const getThemeMode = () => { try{ return localStorage.getItem(THEME_KEY) || 'auto'; }catch{ return 'auto'; } };
+  const resolveTheme = (mode) => mode==='auto' ? ((window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark') : (mode==='light' ? 'light' : 'dark');
+  const applyTheme = (mode) => {
+    const t = resolveTheme(mode);
+    document.documentElement.setAttribute('data-theme', t);
+    const mc = document.querySelector('meta[name="theme-color"]'); if (mc) mc.setAttribute('content', t==='light' ? '#ffffff' : '#04070c');
+    document.querySelectorAll('#themeSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeOpt===mode)));
+  };
+  document.querySelectorAll('#themeSeg button').forEach(b => b.addEventListener('click', () => { const m=b.dataset.themeOpt; try{ localStorage.setItem(THEME_KEY, m); }catch{} applyTheme(m); }));
+  try{ const mq = matchMedia('(prefers-color-scheme: light)'); const onChange = () => { if (getThemeMode()==='auto') applyTheme('auto'); }; mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener && mq.addListener(onChange); }catch{}
+  applyTheme(getThemeMode());
+
+  // ===================== Tallennus =====================
+  const toPlain = () => ({ version:'4.2', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followName:state.followName,
+    compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
+    history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
+    data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
+  const fromPlain = (obj) => { try{
+    if (!obj || typeof obj!=='object') return false;
+    const D = makeDefaults();
+    state.bibStart=numOr(obj.bibStart,D.bibStart); state.bibEnd=numOr(obj.bibEnd,D.bibEnd); state.interval=numOr(obj.interval,D.interval);
+    state.laps=Math.max(1, Math.min(MAX_LAPS, Math.floor(numOr(obj.laps,D.laps))));
+    state.followBib = (obj.followBib===null || obj.followBib===undefined || obj.followBib==='') ? null : numOr(obj.followBib,null);
+    state.followName=obj.followName||''; state.compareBibs=Array.isArray(obj.compareBibs)?obj.compareBibs.map(Number).filter(Number.isFinite):[];
+    state.compareNames=obj.compareNames||{}; state.allNames=obj.allNames||{};
+    state.raceStartMs=obj.raceStartMs??null; state.finishedCount=obj.finishedCount||0;
+    state.history=Array.isArray(obj.history)?obj.history:[]; state.viewLapOverride=(obj.viewLapOverride??null);
+    state.raceStopped=!!obj.raceStopped; state.raceStopMs=(obj.raceStopMs??null);
+    state.data=new Map();
+    (obj.data||[]).forEach(rec=>{ const bib=Number(rec.bib); if(!Number.isFinite(bib)) return; state.data.set(bib,{passes:Array.isArray(rec.passes)?rec.passes:[], adj:Array.isArray(rec.adj)?rec.adj:[]}); });
+    state.cols=Array.isArray(obj.cols)?obj.cols:[];
+    if (state.cols.length!==state.laps) rebuildColsFromData();
+    return true;
+  }catch(e){ return false; } };
+  const lsGet = (k) => { try{ return localStorage.getItem(k); }catch{ return null; } };
+  const saveSettings = () => { try{ localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify({ bibStart:state.bibStart,bibEnd:state.bibEnd,interval:state.interval,laps:state.laps,followBib:state.followBib,followName:state.followName,compareBibs:state.compareBibs,compareNames:state.compareNames })); }catch{} };
+  const saveRun = () => { try{ localStorage.setItem(STORAGE_RUN_KEY, JSON.stringify(toPlain())); }catch{} };
+  const peekSavedRun = () => { try{ const raw = lsGet(STORAGE_RUN_KEY) || lsGet(LEGACY_RUN_KEY); return raw ? JSON.parse(raw) : null; }catch{ return null; } };
+  const loadSettings = () => { try{ const raw = lsGet(STORAGE_SETTINGS_KEY) || lsGet(LEGACY_SETTINGS_KEY); if(raw){ Object.assign(state, makeDefaults(), JSON.parse(raw)); } }catch{} };
+  const loadRun = () => { const o = peekSavedRun(); return o ? fromPlain(o) : false; };
+  const clearAllStorage = () => { try{ const keys=[]; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('skiTimer')) keys.push(k); } keys.forEach(k=>localStorage.removeItem(k)); }catch{} };
+  const sessionActive = () => { try{ return sessionStorage.getItem(SESSION_KEY)==='active' || sessionStorage.getItem(LEGACY_SESSION_KEY)==='active'; }catch{ return false; } };
+  const startNewSession = () => { try{ sessionStorage.setItem(SESSION_KEY,'active'); sessionStorage.removeItem(LEGACY_SESSION_KEY); }catch{} };
+  const resetState = () => { Object.assign(state, makeDefaults(), { raceStartMs:null, cols:[], data:new Map(), finishedCount:0, history:[], viewLapOverride:null, raceStopped:false, raceStopMs:null }); document.body.classList.remove('race-stopped','all-finished'); };
+
+  // ===================== Kierrokset & kisa =====================
+  const bibOffsetMs = (bib) => (bib - state.bibStart) * state.interval * 1000;
+  const ensureBib = (bib) => { if(!state.data.has(bib)) state.data.set(bib,{passes:[],adj:[]}); return state.data.get(bib); };
+  const participantsWithPass = (lapFilter=null) => { const arr=[]; state.data.forEach((v,bib)=>{ if(v && v.passes.length>0){ const useLap=lapFilter?Math.min(v.passes.length,lapFilter):v.passes.length; if(useLap>=1) arr.push({bib,laps:useLap,adj:v.adj[useLap-1]}); } }); return arr; };
+  const maxPassesAcross = () => { let m=0; state.data.forEach(v=>{ if(v && v.passes.length>m) m=v.passes.length; }); return m; };
+  const followPasses = () => { if(!hasFollow()) return 0; const v=state.data.get(state.followBib); return v ? v.passes.length : 0; };
+  const currentLap = () => { const fp=followPasses(); if(fp>=1) return Math.min(fp,state.laps); return Math.min(maxPassesAcross(),state.laps); };
+  const prevLap = () => { const c=currentLap(); return c>1 ? c-1 : 0; };
+  const clampLap = (lap) => Math.max(1, Math.min(state.laps, lap));
+  const getViewLap = () => state.viewLapOverride!=null ? clampLap(state.viewLapOverride) : currentLap();
+  const lapDelta = (a,b,lap) => { const A=state.data.get(a), B=state.data.get(b); if(!A||!B) return null; if(A.adj.length<lap || B.adj.length<lap) return null; return A.adj[lap-1]-B.adj[lap-1]; };
+  const totalBibs = () => Math.max(0, state.bibEnd - state.bibStart + 1);
+  const hasAnyData = () => participantsWithPass().length>0 || state.raceStartMs!=null || state.raceStopped;
+  const isRaceRunning = () => { const total=totalBibs(); const everyoneDone=(state.finishedCount===total && total>0); return (participantsWithPass().length>0 || state.raceStartMs!=null) && !everyoneDone && !state.raceStopped; };
+  const updateFinishedClass = () => { const total=totalBibs(); document.body.classList.toggle('all-finished', total>0 && state.finishedCount===total); };
+
+  // Sarakkeet johdetaan datasta: kilpailija on sarakkeessa (ohitusten määrä), jos ei ole vielä valmis.
+  const rebuildColsFromData = () => {
+    state.cols = Array.from({length:state.laps},()=>[]);
+    for (let b=state.bibStart; b<=state.bibEnd; b++) { const n=(state.data.get(b)?.passes.length)||0; if (n<state.laps) state.cols[n].push(b); }
+  };
+  const insertSorted = (arr, bib) => { if(!arr || arr.includes(bib)) return; let i=0; while(i<arr.length && arr[i]<bib) i++; arr.splice(i,0,bib); };
+  const moveBib = (from,to,bib) => {
+    if (from!=null) state.cols[from]=(state.cols[from]||[]).filter(x=>x!==bib);
+    if (to!=null){ state.cols[to]=state.cols[to]||[]; insertSorted(state.cols[to], bib); }
+  };
+
+  // ===================== Kello =====================
+  let clockTimer = null;
+  const updateRaceClock = () => { if(!state.raceStartMs){ els.raceClock.textContent='--:--.-'; return; } els.raceClock.textContent = fmtT((state.raceStopMs ?? Date.now()) - state.raceStartMs); };
+  const syncClock = () => {
+    const shouldRun = state.raceStartMs!=null && state.raceStopMs==null;
+    if (shouldRun && !clockTimer) clockTimer=setInterval(updateRaceClock,100);
+    if (!shouldRun && clockTimer) { clearInterval(clockTimer); clockTimer=null; }
+    updateRaceClock();
+  };
+  const checkAllFinished = () => {
+    let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); if(d && d.passes.length>=state.laps) finished++; }
+    state.finishedCount=finished;
+    const allDone = finished>0 && finished===totalBibs();
+    if (allDone) { if (state.raceStopMs==null) state.raceStopMs=Date.now(); }
+    else if (!state.raceStopped && state.raceStopMs!=null) state.raceStopMs=null;   // viimeisen maaliintulon peruutus käynnistää kellon uudelleen
+    updateFinishedClass();
+  };
+
+  // ===================== Piirto =====================
+  const computePosition = (lapForRanking=null) => {
+    const lap=lapForRanking||currentLap(); const arr=participantsWithPass(lap);
+    arr.sort((a,b)=>(b.laps-a.laps)||(a.adj-b.adj));
+    const rankMap=new Map(); arr.forEach((x,i)=>rankMap.set(x.bib,i+1));
+    return { rank: hasFollow() ? (rankMap.get(state.followBib) ?? '–') : '–', arr, lap };
+  };
+  const makeDeltaChip = (c, lap) => {
+    const delta=lapDelta(state.followBib,c,lap); const chip=document.createElement('div'); chip.className='chip';
+    const lab=document.createElement('span'); lab.className='label'; const nm=resolveDisplayName(c); lab.textContent = nm ? `#${c} ${nm}` : `#${c}`;
+    const val=document.createElement('span'); val.className='val';
+    if (delta===null) { chip.classList.add('neutral'); val.textContent='--:--.-'; }
+    else if (delta>0) { chip.classList.add('bad'); val.textContent=`+${fmtT(delta)}`; }
+    else if (delta<0) { chip.classList.add('good'); val.textContent=`-${fmtT(-delta)}`; }
+    else { chip.classList.add('neutral'); val.textContent=fmtT(0); }
+    chip.appendChild(lab); chip.appendChild(val); return chip;
+  };
+  const addDeltaChips = (lap, container) => {
+    if (!hasFollow() || !state.compareBibs.length) return 0; let n=0;
+    state.compareBibs.forEach(c => { if(!Number.isFinite(c) || c===state.followBib) return; container.appendChild(makeDeltaChip(c,lap)); n++; });
+    return n;
+  };
+  const renderTop = () => {
+    if (hasFollow()) { const nm=resolveDisplayName(state.followBib); els.followLabel.textContent = nm ? `#${state.followBib} ${nm}` : `#${state.followBib}`; } else els.followLabel.textContent='–';
+    const cl=currentLap(); const {rank}=computePosition(cl);
+    els.posLabel.textContent=`Sijoitus: ${rank}`;
+    els.lapBadge.style.display = cl>=1 ? 'inline-block' : 'none'; if (cl>=1) els.lapBadge.textContent=`Kierros ${cl}`;
+    Array.from(els.topChips.querySelectorAll('.chip')).forEach(ch => { if (ch.id!=='raceClockChip') ch.remove(); });
+    if (cl>=1) addDeltaChips(cl, els.topChips);
+    const pl=prevLap(); els.prevChips.innerHTML='';
+    if (pl>=1) { els.prevLabel.textContent=`Edellinen: kierros ${pl}`; els.prevRow.style.display = addDeltaChips(pl, els.prevChips)>0 ? 'flex' : 'none'; }
+    else els.prevRow.style.display='none';
+  };
+  const renderResults = () => {
+    const keepScroll = els.resultsList.scrollTop;
+    const {arr,lap}=computePosition(getViewLap());
+    els.resultsList.innerHTML='';
+    els.resultsLapBadge.style.display = lap>=1 ? 'inline-block' : 'none'; if (lap>=1) els.resultsLapBadge.textContent=`Kierros ${lap}`;
+    if (!arr.length) return;
+    const leaders = arr.filter(x=>x.laps>=lap); const leaderAdj = Math.min(...(leaders.length?leaders:arr).map(x=>x.adj));
+    const frag=document.createDocumentFragment();
+    arr.forEach((x,idx) => {
+      const row=document.createElement('div'); row.className='res-item'; row.dataset.bib=String(x.bib);
+      if (x.bib===state.followBib) row.classList.add('follow'); else if (state.compareBibs.includes(x.bib)) row.classList.add('compare');
+      const rank=document.createElement('div'); rank.className='rank'; rank.textContent=idx+1;
+      const center=document.createElement('div'); const title=document.createElement('div'); title.className='bib';
+      const nm=resolveDisplayName(x.bib); title.textContent = nm ? `#${x.bib} ${nm}` : `#${x.bib}`;
+      const sub=document.createElement('div'); sub.className='name'; sub.textContent=`Ohituksia: ${x.laps}/${state.laps}`;
+      center.appendChild(title); center.appendChild(sub);
+      const right=document.createElement('div'); right.className='time'; right.textContent = (x.laps>=lap) ? fmtT(x.adj-leaderAdj) : '--:--.-';
+      row.appendChild(rank); row.appendChild(center); row.appendChild(right); frag.appendChild(row);
+    });
+    els.resultsList.appendChild(frag); els.resultsList.scrollTop = keepScroll;
+  };
+  const scrollFollowIntoView = () => { const t=els.resultsList.querySelector('.res-item.follow'); if (t) t.scrollIntoView({behavior:'smooth',block:'center'}); };
+  els.resultsList.addEventListener('click', scrollFollowIntoView);
+
+  const renderColumns = () => {
+    const scrolls={}; els.columns.querySelectorAll('.col').forEach(c => { const l=c.querySelector('.list'); if(l) scrolls[c.dataset.col]=l.scrollTop; });
+    els.columns.innerHTML='';
+    const frag=document.createDocumentFragment();
+    for (let i=0;i<state.laps;i++) {
+      const bibs=state.cols[i]||[]; if (!bibs.length) continue;
+      const col=document.createElement('div'); col.className='col'; col.dataset.col=String(i);
+      const h=document.createElement('h3'); const t=document.createElement('span'); t.textContent=labelForCol(i); const c=document.createElement('span'); c.className='count'; c.textContent=String(bibs.length); h.appendChild(t); h.appendChild(c);
+      const list=document.createElement('div'); list.className='list'; list.id=`list-${i}`;
+      bibs.forEach(bib => { const b=document.createElement('button'); b.className='bibbtn'; b.type='button'; b.textContent=bib; b.dataset.bib=String(bib); if(state.followBib===bib) b.classList.add('following'); list.appendChild(b); });
+      col.appendChild(h); col.appendChild(list); frag.appendChild(col);
+    }
+    els.columns.appendChild(frag);
+    els.columns.querySelectorAll('.col').forEach(c => { const l=c.querySelector('.list'); if (scrolls[c.dataset.col]) l.scrollTop=scrolls[c.dataset.col]; });
+  };
+  const setUndoEnabled = () => { els.undoBtn.disabled = ((state.history||[]).length===0) || state.raceStopped; };
+  const updateSettingsControls = () => { const running=isRaceRunning(); els.inputs.bibStart.disabled=running; els.inputs.bibEnd.disabled=running; els.inputs.interval.disabled=running; els.lockHint.style.display = running ? 'block' : 'none'; };
+  const renderAll = () => { renderColumns(); renderTop(); renderResults(); syncClock(); updateSettingsControls(); updateFinishedClass(); setUndoEnabled(); };
+  const commit = () => { renderAll(); saveRun(); };
+
+  // ===================== Kirjaukset =====================
+  const recordPass = (bib,whenMs) => { const e=ensureBib(bib); e.passes.push(whenMs); e.adj.push(whenMs - bibOffsetMs(bib)); };
+  const removeLastPass = (bib) => { const e=ensureBib(bib); if (e.passes.length) { e.passes.pop(); e.adj.pop(); } };
+  const handleTap = (colIdx, bib, when=Date.now()) => {
+    if (state.raceStopped) { showToast('Kilpailu on lopetettu.'); return; }
+    const startedRace = (state.raceStartMs==null);
+    if (startedRace) state.raceStartMs = when;
+    recordPass(bib, when);
+    const toCol = (colIdx < state.laps-1) ? colIdx+1 : null;
+    state.history = state.history||[]; state.history.push({type:'tap', bib, fromCol:colIdx, toCol, startedRace});
+    state.viewLapOverride = null;
+    moveBib(colIdx, toCol, bib);
+    checkAllFinished(); commit();
+  };
+  const handleLongPress = (colIdx, bib) => {
+    if (state.raceStopped || colIdx<=0) return;
+    moveBib(colIdx, colIdx-1, bib); removeLastPass(bib);
+    // poista vastaava historiamerkintä, ettei Peruuta-painike sotke dataa jälkikäteen
+    for (let i=state.history.length-1;i>=0;i--) { const h=state.history[i]; if (h.bib===bib && h.toCol===colIdx) { state.history.splice(i,1); break; } }
+    if (participantsWithPass().length===0) state.raceStartMs=null;
+    checkAllFinished(); commit(); showToast(`#${bib}: ohitus peruttu`);
+  };
+  const undoLast = () => {
+    if (state.raceStopped) return;
+    const last=(state.history||[]).pop(); if (!last) { setUndoEnabled(); return; }
+    removeLastPass(last.bib);
+    if (last.toCol===null) { state.cols[last.fromCol]=state.cols[last.fromCol]||[]; insertSorted(state.cols[last.fromCol], last.bib); }
+    else moveBib(last.toCol, last.fromCol, last.bib);
+    if (last.startedRace && participantsWithPass().length===0) state.raceStartMs=null;
+    checkAllFinished(); commit();
+  };
+  els.undoBtn.addEventListener('click', undoLast);
+
+  // Numeroruudukon kosketus: yksi delegoitu kuuntelija (pointer events). Ei kaksoislaukaisua touch+click -yhdistelmästä.
+  (function attachBibInput(){
+    let press=null;
+    const clearPress = () => { if (press) { clearTimeout(press.timer); press.btn.classList.remove('pressed'); press=null; } };
+    els.columns.addEventListener('pointerdown', (e) => {
+      if (e.pointerType==='mouse' && e.button!==0) return;
+      const btn=e.target.closest('.bibbtn'); if(!btn) return;
+      clearPress();
+      const col=Number(btn.closest('.col').dataset.col), bib=Number(btn.dataset.bib);
+      btn.classList.add('pressed');
+      press={ id:e.pointerId, bib, col, x:e.clientX, y:e.clientY, t:Date.now(), btn, timer:null };
+      press.timer=setTimeout(() => { if(!press) return; const p=press; clearPress(); vibrate(40); handleLongPress(p.col,p.bib); }, LONG_PRESS_MS);
+    });
+    els.columns.addEventListener('pointermove', (e) => { if (press && e.pointerId===press.id && (Math.abs(e.clientX-press.x)>MOVE_PX || Math.abs(e.clientY-press.y)>MOVE_PX)) clearPress(); });
+    els.columns.addEventListener('pointerup', (e) => { if (!press || e.pointerId!==press.id) return; const p=press; clearPress(); vibrate(15); handleTap(p.col, p.bib, p.t); });
+    els.columns.addEventListener('pointercancel', clearPress);
+    els.columns.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Näppäimistö / ruudunlukija (detail===0): sormen kosketuksesta syntyvä click ohitetaan
+    els.columns.addEventListener('click', (e) => { if (e.detail!==0) return; const btn=e.target.closest('.bibbtn'); if(btn) handleTap(Number(btn.closest('.col').dataset.col), Number(btn.dataset.bib)); });
+  })();
+
+  const initLists = (persist=true) => {
+    state.data.clear(); state.raceStartMs=null; state.raceStopMs=null; state.finishedCount=0; state.history=[]; state.viewLapOverride=null;
+    rebuildColsFromData(); renderAll(); if (persist) saveRun();
+  };
+
+  // ===================== Asetuspaneeli =====================
+  const fillInputs = () => {
+    const i=els.inputs; i.bibStart.value=state.bibStart; i.bibEnd.value=state.bibEnd; i.interval.value=state.interval; i.laps.value=state.laps;
+    i.followBib.value=state.followBib??''; i.followName.value=state.followName??''; i.compareBibs.value=(state.compareBibs||[]).join(', ');
+    i.compareNames.value=Object.keys(state.compareNames||{}).map(k=>`${k}=${state.compareNames[k]}`).join(', ');
+    i.allNames.value=Object.keys(state.allNames||{}).map(k=>`${k}=${state.allNames[k]}`).join('\n');
+  };
+  const openSheet = () => { els.sheet.classList.add('open'); els.sheet.setAttribute('aria-hidden','false'); els.gearBtn.style.display='none'; fillInputs(); updateSettingsControls(); applyTheme(getThemeMode()); };
+  const closeSheet = () => { els.sheet.classList.remove('open'); els.sheet.setAttribute('aria-hidden','true'); els.gearBtn.style.display='grid'; };
+  els.gearBtn.addEventListener('click', openSheet);
+
+  (function attachSheetDrag(){
+    const handle=$('sheetHandle'); let startY=0, curY=0, dragging=false;
+    handle.addEventListener('pointerdown', (e) => { if (!els.sheet.classList.contains('open')) return; dragging=true; startY=e.clientY; curY=0; els.sheet.style.transition='none'; try{ handle.setPointerCapture(e.pointerId); }catch{} });
+    handle.addEventListener('pointermove', (e) => { if(!dragging) return; curY=Math.max(0,e.clientY-startY); els.sheet.style.transform=`translateY(${curY}px)`; });
+    const end = () => { if(!dragging) return; dragging=false; els.sheet.style.transition=''; els.sheet.style.transform=''; if (curY>70) closeSheet(); };
+    handle.addEventListener('pointerup', end); handle.addEventListener('pointercancel', end);
+  })();
+
+  // ----- Lähtölistan tuonti (Nro + Nimi) -----
+  const parseStartList = (raw) => {
+    const text=String(raw||'').trim(); if(!text) return {map:{},count:0,errors:['Tyhjä syöte.']};
+    const lines=text.replace(/\r/g,'').split('\n').map(l=>l.trim()).filter(Boolean); if(!lines.length) return {map:{},count:0,errors:['Tyhjä syöte.']};
+    const errors=[], out={}; const hasTabs=lines.some(l=>l.includes('\t'));
+    const norm=(s)=>String(s||'').toLowerCase().replace(/\s+/g,' ').trim();
+    if (hasTabs) {
+      let hIdx=-1;
+      for (let i=0;i<Math.min(lines.length,5);i++){ const n=norm(lines[i]); if((n.includes('nro')||n.includes('numero')||n.includes('bib')||n.includes('nr')) && (n.includes('nimi')||n.includes('name'))){ hIdx=i; break; } }
+      const hdrNorm=(hIdx>=0?lines[hIdx]:lines[0]).split('\t').map(s=>norm(s.trim()));
+      const nroIdx=hdrNorm.findIndex(c=>c==='nro'||c==='numero'||c==='bib'||c==='nr'||c.includes('nro'));
+      const nimiIdx=hdrNorm.findIndex(c=>c==='nimi'||c==='name'||c.includes('nimi')||c.includes('name'));
+      if (nroIdx===-1||nimiIdx===-1) errors.push('Taulukon otsikoista ei löytynyt sarakkeita Nro ja Nimi.');
+      else for (let i=(hIdx>=0?hIdx+1:1);i<lines.length;i++){
+        const cols=lines[i].split('\t'); if(cols.length<=Math.max(nroIdx,nimiIdx)) continue;
+        const nro=Number(String(cols[nroIdx]||'').trim()), nimi=String(cols[nimiIdx]||'').trim();
+        if(!Number.isFinite(nro)||nro<=0) continue;
+        if(!nimi){ errors.push(`Riviltä ${i+1} puuttuu nimi (#${nro}).`); continue; }
+        out[nro]=nimi;
+      }
+    }
+    if (Object.keys(out).length===0) {
+      for (let i=0;i<lines.length;i++){
+        let l=lines[i].replace(/^\d{1,2}:\d{2}(?::\d{2})?\s+/,'');
+        if (l.includes('\t')) { const parts=l.split('\t').map(s=>s.trim()).filter(Boolean); if(parts.length>=2){ const nro=Number(parts[0]); if(Number.isFinite(nro)&&nro>0){ out[nro]=parts[1]; continue; } } }
+        const m=l.match(/^(\d{1,5})\s+(.+?)$/); if(!m) continue;
+        const nro=Number(m[1]), nimi=String(m[2]).trim(); if(Number.isFinite(nro)&&nro>0&&nimi) out[nro]=nimi;
+      }
+    }
+    const count=Object.keys(out).length; if(count===0&&errors.length===0) errors.push('Yhtään kilpailunumeroa ja nimeä ei löytynyt.');
+    return {map:out,count,errors};
+  };
+  els.importStartListBtn.addEventListener('click', () => {
+    const parsed=parseStartList(els.inputs.startListImport.value);
+    if (!parsed.count) { showToast(parsed.errors[0]||'Tuonti epäonnistui.'); return; }
+    state.allNames=parsed.map;
+    els.inputs.allNames.value=Object.keys(parsed.map).map(Number).sort((a,b)=>a-b).map(n=>`${n}=${parsed.map[n]}`).join('\n');
+    saveRun(); renderTop(); renderResults(); showToast(`Tuotu ${parsed.count} nimeä (korvattu).`);
+  });
+
+  // ----- Tallenna -----
+  els.saveBtn.addEventListener('click', async () => {
+    const i=els.inputs, running=isRaceRunning();
+    const bS=numOr(i.bibStart.value,null), bE=numOr(i.bibEnd.value,null), iv=numOr(i.interval.value,null), lpRaw=numOr(i.laps.value,null);
+    const fbRaw=i.followBib.value.trim(); const fb = fbRaw==='' ? null : numOr(fbRaw,NaN);
+    const err = (m) => { showToast(m, 3200); };
+    if (fb!==null && (!Number.isInteger(fb) || fb<0)) return err('Seurattava numero ei kelpaa.');
+    if (lpRaw===null || !Number.isInteger(lpRaw) || lpRaw<1 || lpRaw>MAX_LAPS) return err(`Kierrosten määrä: 1–${MAX_LAPS}.`);
+    if (!running) {
+      if (bS===null || bE===null || !Number.isInteger(bS) || !Number.isInteger(bE) || bS<0 || bE<bS) return err('Tarkista numeroväli (alku ≤ loppu).');
+      if (bE-bS+1>MAX_BIBS) return err(`Numeroita voi olla enintään ${MAX_BIBS}.`);
+      if (iv===null || iv<0) return err('Lähtöväli ei voi olla negatiivinen.');
+    }
+    const oldBS=state.bibStart, oldBE=state.bibEnd, oldIV=state.interval, oldLaps=state.laps;
+    if (running) { if ((bS!==null&&bS!==oldBS)||(bE!==null&&bE!==oldBE)||(iv!==null&&iv!==oldIV)) { showToast('Kisa käynnissä: numeroväliä ja lähtöväliä ei voi muuttaa.'); } }
+    const newBS = running ? oldBS : bS, newBE = running ? oldBE : bE, newIV = running ? oldIV : iv;
+    const baseChanged = !running && (newBS!==oldBS || newBE!==oldBE || newIV!==oldIV || lpRaw!==oldLaps);
+    if (baseChanged && hasAnyData()) {
+      const ok = await askConfirm({ title:'Tyhjennetäänkö kirjaukset?', text:'Numerovälin, lähtövälin tai kierrosmäärän muutos aloittaa uuden kisan ja poistaa nykyiset kirjaukset ja tulokset.', ok:'Kyllä, tyhjennä', cancel:'Peruuta' });
+      if (!ok) return;
+    }
+    state.bibStart=newBS; state.bibEnd=newBE; state.interval=newIV; state.laps=lpRaw;
+    state.followBib=fb; state.followName=i.followName.value.trim();
+    state.compareBibs=parseNumList(i.compareBibs.value); state.compareNames=parseNameMap(i.compareNames.value); state.allNames=parseNameMap(i.allNames.value);
+    if (baseChanged) { state.raceStopped=false; state.raceStopMs=null; document.body.classList.remove('race-stopped'); initLists(false); }
+    else if (state.laps!==oldLaps) { rebuildColsFromData(); state.history=[]; state.viewLapOverride=null; checkAllFinished(); showToast('Kierrosmäärä muutettu. Peruuta-historia tyhjennettiin.'); }
+    saveSettings(); commit(); closeSheet();
+  });
+
+  // ----- Palauta oletukset -----
+  els.wipeAllBtn.addEventListener('click', async () => {
+    const ok = await askConfirm({ title:'Lopetetaanko kisa ja palautetaan kaikki oletuksiin?', text:'Tämä tyhjentää ajanoton, seurannat ja asetukset. Toiminto ei ole peruttavissa.', ok:'Kyllä, lopeta', cancel:'Peru' });
+    if (!ok) return;
+    clearAllStorage(); resetState(); startNewSession();
+    initLists(false); closeSheet(); showToast('Kisa lopetettu. Oletukset palautettu.');
+  });
+
+  // ----- Ohje -----
+  const openHelp = () => els.helpModal.classList.add('open');
+  const closeHelp = () => els.helpModal.classList.remove('open');
+  els.helpBtn.addEventListener('click', openHelp);
+  els.helpCloseBtn.addEventListener('click', closeHelp);
+  els.helpModal.addEventListener('click', (e) => { if (e.target===els.helpModal) closeHelp(); });
+
+  // ===================== Lopetus & vienti =====================
+  const exportResults = () => {
+    const now=new Date(); const baseName=`tulokset_${fmtLocal(now).replace(/[: ]/g,'-')}.txt`;
+    const lines=['KILPAILUN TULOKSET', `Luotu:\t${fmtLocal(now)}`, `Numeroväli:\t${state.bibStart}–${state.bibEnd}`, `Lähtöväli:\t${state.interval} s`, `Kierrokset:\t${state.laps}`];
+    if (hasFollow()) { const fn=resolveDisplayName(state.followBib); lines.push(`Seurattava:\t#${state.followBib}${fn?' '+fn:''}`); }
+    lines.push('');
+    const race0=state.raceStartMs; const passClockMap=new Map();
+    for (let bib=state.bibStart; bib<=state.bibEnd; bib++) { const d=state.data.get(bib); if(!d||!d.passes.length) continue; passClockMap.set(bib, d.passes.map(ms => race0 ? fmtT(ms-race0) : '--:--.-')); }
+    for (let lap=1; lap<=state.laps; lap++) {
+      const eligible=(computePosition(lap).arr||[]).filter(x=>x.laps>=lap);
+      lines.push(`KIERROS ${lap}`);
+      if (!eligible.length) { lines.push('Ei tuloksia.',''); continue; }
+      const leaderAdj=Math.min(...eligible.map(x=>x.adj));
+      lines.push('sija\tnumero\tnimi\tero kärkeen\tohitukset (kellonajat)');
+      eligible.forEach((x,idx) => {
+        const delta=x.adj-leaderAdj; const deltaStr=(idx===0||delta===0) ? fmtT(0) : ('+'+fmtT(delta));
+        lines.push(`${idx+1}\t${x.bib}\t${resolveDisplayName(x.bib)}\t${deltaStr}\t${(passClockMap.get(x.bib)||[]).slice(0,lap).join(', ')}`);
+      });
+      lines.push('');
+    }
+    const unfinished=[]; passClockMap.forEach((clocks,bib) => { const n=state.data.get(bib).passes.length; if(n<state.laps) unfinished.push({bib,nm:resolveDisplayName(bib),n,clocks}); });
+    if (unfinished.length) {
+      lines.push('KESKEN (ei vielä kaikkia kierroksia)','numero\tnimi\tohituksia\tohitukset (kellonajat)');
+      unfinished.sort((a,b)=>a.bib-b.bib).forEach(u => lines.push(`${u.bib}\t${u.nm}\t${u.n}/${state.laps}\t${u.clocks.join(', ')}`));
+      lines.push('');
+    }
+    const txt='\ufeff'+lines.join('\n');   // BOM: ä/ö/å Excelissä ja Muistiossa
+    const download = () => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'})); a.download=baseName; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
+    try {
+      const file=new File([txt], baseName, {type:'text/plain;charset=utf-8'});
+      if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) { navigator.share({title:'Tulokset', text:'Kilpailun tulokset (TXT)', files:[file]}).catch(()=>download()); return; }
+    } catch(e) {}
+    download();
+  };
+  const stopRace = (doExport) => {
+    if (state.raceStopped) return;
+    state.raceStopped=true; state.raceStopMs=Date.now();
+    document.body.classList.add('race-stopped');
+    commit(); closeSheet(); releaseWake();
+    if (doExport) exportResults();
+    showToast('Kilpailu lopetettu.');
+  };
+  els.stopRaceBtn.addEventListener('click', () => els.stopRaceModal.classList.add('open'));
+  els.stopRaceModal.addEventListener('click', (e) => {
+    const id = e.target.id;
+    if (e.target===els.stopRaceModal || id==='stopRaceCancelBtn') els.stopRaceModal.classList.remove('open');
+    else if (id==='stopRaceNoBtn') { els.stopRaceModal.classList.remove('open'); stopRace(false); }
+    else if (id==='stopRaceYesBtn') { els.stopRaceModal.classList.remove('open'); stopRace(true); }
+  });
+
+  // ===================== Tulosten selaus pyyhkäisemällä =====================
+  (function attachResultsSwipe(){
+    const el=els.resultsList; let sx=0, sy=0, tracking=false;
+    el.addEventListener('touchstart', (e) => { if (state.laps<=1) return; const t=e.touches[0]; sx=t.clientX; sy=t.clientY; tracking=true; }, {passive:true});
+    el.addEventListener('touchend', (e) => {
+      if (!tracking || state.laps<=1) return; tracking=false;
+      const t=e.changedTouches && e.changedTouches[0]; if(!t) return;
+      const dx=t.clientX-sx, dy=t.clientY-sy; if (Math.abs(dx)<45 || Math.abs(dy)>30) return;
+      const cur=getViewLap(); state.viewLapOverride = dx>0 ? clampLap(cur-1) : clampLap(cur+1);
+      renderResults(); showToast(`Tulosseuranta: kierros ${state.viewLapOverride}`); saveRun();
+    }, {passive:true});
+  })();
+
+  // ===================== Näyttö päällä =====================
+  let wakeLock=null;
+  const requestWake = async () => { try{ if (state.raceStopped || wakeLock || !('wakeLock' in navigator) || document.visibilityState!=='visible') return; wakeLock=await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{ wakeLock=null; }); }catch{ wakeLock=null; } };
+  const releaseWake = () => { try{ if (wakeLock) wakeLock.release(); }catch{} wakeLock=null; };
+  document.addEventListener('pointerdown', requestWake, {passive:true});
+
+  // ===================== Käynnistys =====================
+  const boot = () => {
+    if (sessionActive()) {
+      if (loadRun()) renderAll(); else { loadSettings(); initLists(); }
+      return;
+    }
+    const saved=peekSavedRun();
+    const hasData = saved && Array.isArray(saved.data) && saved.data.some(d => d && Array.isArray(d.passes) && d.passes.length>0);
+    const fresh = saved && Number.isFinite(saved.savedAt) && (Date.now()-saved.savedAt) < RESUME_MAX_AGE_MS;
+    if (hasData && fresh) {
+      resetState(); initLists(false);   // oletusnäkymä taustalle, tallennusta ei kosketa ennen valintaa
+      const t=new Date(saved.savedAt);
+      askConfirm({ title:'Jatketaanko edellistä kisaa?', text:`Selaimesta löytyi aiempi kisa (viimeksi tallennettu ${pad(t.getHours())}:${pad(t.getMinutes())}). Jatketaanko siitä vai aloitetaanko alusta?`, ok:'Jatka kisaa', cancel:'Aloita alusta', danger:false })
+        .then(cont => {
+          startNewSession();
+          if (cont && fromPlain(saved)) { renderAll(); saveRun(); }
+          else { clearAllStorage(); resetState(); initLists(false); }
+          if (state.raceStopped) document.body.classList.add('race-stopped');
+        });
+      return;
+    }
+    clearAllStorage(); resetState(); initLists(false); startNewSession();
+  };
+  const persistIfActive = () => { if (sessionActive()) { saveRun(); saveSettings(); } };
+  window.addEventListener('pageshow', updateRaceClock);
+  window.addEventListener('pagehide', persistIfActive);
+  window.addEventListener('beforeunload', persistIfActive);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState==='hidden') persistIfActive(); else { updateRaceClock(); requestWake(); } });
+  boot();
+  if (state.raceStopped) document.body.classList.add('race-stopped');
+  </script>
+</body>
+</html>
