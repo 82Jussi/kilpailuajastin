@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.3)</title>
+  <title>Kilpailuajastin (4.4)</title>
   <script>
     // Aseta teema heti (ei välähdystä). Valinta tallennetaan avaimella 'kaTheme' (ei tyhjene uuden session alussa).
     (function(){
@@ -34,7 +34,7 @@
       --modal-bg:rgba(0,0,0,.72); --toast-bg:#1b2b49; --toast-text:#ffffff;
       --banner-bg:rgba(255,90,107,.25); --banner-line:#ff5a6b; --banner-text:#ffd9de;
       --badge-bg:#263a63; --badge-line:#3b5688; --badge-text:#e3ecff;
-      --shadow:0 4px 16px rgba(0,0,0,.45);
+      --shadow:0 1px 2px rgba(0,0,0,.5);
       --gear-bg:#22386a;
     }
     /* Aurinko: kirkkaaseen päivänvaloon (vaalea, matta tausta, musta teksti, tummat värit, vahvat reunat) */
@@ -52,7 +52,7 @@
       --modal-bg:rgba(15,23,42,.55); --toast-bg:#111827; --toast-text:#ffffff;
       --banner-bg:#ffd9de; --banner-line:#b00020; --banner-text:#7a0014;
       --badge-bg:#dbe6ff; --badge-line:#1c3f8f; --badge-text:#0b1220;
-      --shadow:0 2px 8px rgba(15,23,42,.25);
+      --shadow:0 1px 2px rgba(15,23,42,.2);
       --gear-bg:#0b57d0;
     }
 
@@ -67,7 +67,7 @@
       padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
 
     /* ===================== YLÄPALKKI ===================== */
-    .tracking{display:flex;flex-direction:column;gap:6px;min-height:0;max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    .tracking{display:flex;flex-direction:column;gap:6px;min-height:0;max-height:56dvh;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;
       background:var(--panel);border-bottom:2px solid var(--line);padding:calc(6px + env(safe-area-inset-top)) 12px 8px}
     .head{display:flex;gap:10px;align-items:center}
     .title{flex:1;min-width:0;display:flex;flex-direction:column;color:var(--sub);font-size:13px;font-weight:600;line-height:1.25}
@@ -75,7 +75,7 @@
     .pos{background:var(--chip-bg);border:1px solid var(--chip-line);border-radius:10px;padding:3px 10px;font-size:14px;font-weight:800;color:var(--text);white-space:nowrap}
     .chips{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     .chip{display:inline-flex;align-items:center;gap:8px;background:var(--chip-bg);border:1px solid var(--chip-line);padding:4px 12px;border-radius:999px;
-      font-variant-numeric:tabular-nums;box-shadow:var(--shadow);user-select:none;-webkit-user-select:none}
+      font-variant-numeric:tabular-nums;user-select:none;-webkit-user-select:none}
     .chip .label{color:var(--sub);font-size:13px;font-weight:600}
     .chip .val{font-weight:800;font-size:18px;letter-spacing:.2px}
     .chip.good .val{color:var(--good)} .chip.bad .val{color:var(--bad)} .chip.neutral .val{color:var(--neutral)}
@@ -83,11 +83,10 @@
     .lap-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:14px;font-weight:700;color:var(--badge-text);background:var(--badge-bg);border:1px solid var(--badge-line);white-space:nowrap}
     .prev-row{display:none;flex-wrap:wrap;gap:8px;align-items:center;opacity:.8}
     .prev-row .label{font-size:13px;color:var(--sub);font-weight:600}
-    .prev-row .chip{box-shadow:none}
     .prev-row .chip .val{font-size:17px}
 
     .follow-cards{display:flex;flex-wrap:wrap;gap:6px;padding:0 0 2px}
-    .fcard{flex:1 1 140px;min-width:0;max-width:100%;text-align:left;padding:6px 10px;border-radius:12px;background:var(--chip-bg);border:2px solid var(--chip-line);color:var(--text);box-shadow:var(--shadow)}
+    .fcard{flex:1 1 140px;min-width:0;max-width:100%;text-align:left;padding:6px 10px;border-radius:12px;background:var(--chip-bg);border:2px solid var(--chip-line);color:var(--text)}
     .fcard .fn{font-weight:800;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .fcard .fs{font-size:13px;font-weight:600;color:var(--sub);font-variant-numeric:tabular-nums;white-space:nowrap}
     .fcard .fs b{color:var(--text);font-size:15px}
@@ -114,7 +113,8 @@
 
     /* ===================== NUMEROT ===================== */
     :root{ --bibSize:clamp(60px, 9.5dvh, 84px); --bibMin:clamp(72px, 12vw, 110px); }
-    .main{min-height:0;padding:10px 10px calc(86px + env(safe-area-inset-bottom))}
+    .main{min-height:0;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+    .col:last-child .list{padding-bottom:62px}
     .columns{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:8px;height:100%;min-height:0}
     .col{display:flex;flex-direction:column;min-height:0;background:var(--panel);border:2px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
     .col h3{margin:0;font-size:15px;font-weight:800;padding:9px 12px;color:var(--text);border-bottom:2px solid var(--line);display:flex;justify-content:space-between;gap:8px}
@@ -129,9 +129,10 @@
     .bibbtn.following{outline:4px solid var(--accent);outline-offset:1px}
 
     /* ===================== ASETUKSET ===================== */
-    .gear{position:fixed;right:calc(14px + env(safe-area-inset-right));bottom:calc(16px + env(safe-area-inset-bottom));z-index:60;width:60px;height:60px;border-radius:50%;
-      background:var(--gear-bg);border:2px solid var(--btn-line);display:grid;place-items:center;box-shadow:0 8px 22px rgba(0,0,0,.4)}
-    .gear svg{width:30px;height:30px;fill:none;stroke:#ffffff;stroke-width:1.7px}
+    .gear{position:fixed;right:calc(10px + env(safe-area-inset-right));bottom:calc(10px + env(safe-area-inset-bottom));z-index:60;width:46px;height:46px;padding:0;border-radius:50%;
+      background:var(--gear-bg);border:2px solid var(--btn-line);display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.35)}
+    .gear svg{width:26px;height:26px;display:block}
+    .gear:active{transform:scale(.94)}
     .sheet{position:fixed;left:0;right:0;bottom:0;background:var(--panel);border-top:2px solid var(--line);border-top-left-radius:18px;border-top-right-radius:18px;
       box-shadow:0 -10px 30px rgba(0,0,0,.5);transform:translateY(110%);visibility:hidden;transition:transform 280ms ease, visibility 0s linear 280ms;z-index:6;color:var(--text)}
     .sheet.open{transform:translateY(0);visibility:visible;transition:transform 280ms ease, visibility 0s}
@@ -147,6 +148,9 @@
     input[disabled]{background:var(--dis-bg);border-color:var(--line);color:var(--dis-text)}
     textarea{min-height:110px;resize:vertical}
     .hint{margin-top:6px;font-size:13px;color:var(--sub)}
+    .hint code{font-size:12px}
+    .suggest{margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:12px;border:2px solid var(--accent);background:var(--chip-bg);font-size:14px;font-weight:600}
+    .suggest .btn{min-height:40px;padding:6px 12px;font-size:15px}
     .actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;margin-top:12px}
     .actions.end{justify-content:flex-end}
     .btn{min-height:48px;padding:10px 14px;border-radius:12px;border:2px solid var(--btn-line);background:var(--btn-bg);color:var(--btn-text);font-weight:700;font-size:16px}
@@ -170,7 +174,8 @@
     .modal .row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
     .modal .btn{min-width:110px}
     #helpModal .card{max-height:82dvh;overflow:hidden;display:flex;flex-direction:column}
-    #helpModal .card > ul{overflow-y:auto;-webkit-overflow-scrolling:touch;padding-right:6px;margin:0 0 10px 18px;line-height:1.45;font-size:15px}
+    #helpModal .card > ul{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 6px 0 20px;margin:0 0 10px;line-height:1.45;font-size:15px}
+    #helpModal li{margin-bottom:6px}
     #helpModal .card .row{margin-top:10px}
 
     /* ===================== KAIKKI VALMIITA ===================== */
@@ -184,7 +189,7 @@
     @media (orientation: landscape){
       .app{grid-template-columns:minmax(0,1fr) minmax(0,1.3fr);grid-template-rows:minmax(0,1fr)}
       :root{--bibSize:clamp(54px, 15dvh, 80px); --bibMin:90px}
-      .tracking{max-height:none;height:100dvh;border-right:2px solid var(--line);border-bottom:none;padding-bottom:84px}
+      .tracking{max-height:none;height:100dvh;border-right:2px solid var(--line);border-bottom:none;padding-bottom:64px}
       .results{flex:1}
       .results .list{max-height:none;flex:1}
       .main{height:100dvh;padding:10px}
@@ -221,7 +226,7 @@
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <button class="gear" id="gearBtn" type="button" aria-label="Asetukset">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a7.8 7.8 0 0 0 .06-1l2.02-1.57a.6.6 0 0 0 .14-.77l-1.92-3.33a.6.6 0 0 0-.72-.27l-2.34.94a.6.6 0 0 0-.86-.5l-.35-2.49a.6.6 0 0 0-.6-.51H9.13a.6.6 0 0 0-.6.51l-.35 2.49c-.29.14-.57.31-.86.5l-2.34-.94a.6.6 0 0 0-.72.27L2.34 10.1a.6.6 0 0 0 .14.77L4.5 12.44c-.01.17-.02.34-.02.51 0 .17.01.34.02.51l-2.02 1.57a.6.6 0 0 0-.14.77l1.92 3.33a.6.6 0 0 0 .72.27l2.34-.94c.27.19.56.36.86.5l.35 2.49c.05.3.31.51.6.51h3.98c.3 0 .55-.21.6-.51l.35-2.49c.29-.14.58-.31.86-.5l2.34.94c.28.11.61 0 .72-.27l1.92-3.33a.6.6 0 0 0-.14-.77L19.46 15Z"/></svg>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><g fill="#ffffff"><circle cx="12" cy="12" r="7"/><g id="gTooth"><rect x="10.1" y="1.6" width="3.8" height="4.4" rx="1"/></g><use href="#gTooth" transform="rotate(45 12 12)"/><use href="#gTooth" transform="rotate(90 12 12)"/><use href="#gTooth" transform="rotate(135 12 12)"/><use href="#gTooth" transform="rotate(180 12 12)"/><use href="#gTooth" transform="rotate(225 12 12)"/><use href="#gTooth" transform="rotate(270 12 12)"/><use href="#gTooth" transform="rotate(315 12 12)"/></g><circle cx="12" cy="12" r="3" fill="var(--gear-bg)"/></svg>
   </button>
 
   <div class="sheet" id="sheet" aria-hidden="true">
@@ -248,17 +253,19 @@
       <div class="mt"><label for="followNames">Seurattavien nimet (valinnainen, numero=nimi, …)</label><input id="followNames" type="text" placeholder="3=K. Niskanen, 7=M. Mäkinen" /></div>
       <div class="mt"><label for="compareBibs">Vertailunumerot (pilkuilla eroteltu)</label><input id="compareBibs" type="text" placeholder="2, 3, 4" /></div>
       <div class="mt"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="2=A. Virtanen, 3=E. Heikkinen" /></div>
-      <div class="mt"><label for="allNames">Kaikkien nimet (numero=nimi, …)</label><textarea id="allNames" placeholder="1=Etunimi Sukunimi&#10;2=Etunimi Sukunimi"></textarea></div>
       <div class="mt">
-        <label for="startListImport">Tuo lähtölista (kopioi–liitä)</label>
-        <textarea id="startListImport" placeholder="Liitä lähtölista tähän. Voit liittää taulukon (tabit) tai rivimuotoisen listan.&#10;Esim: 117 Petra Rautiainen"></textarea>
-        <div class="actions end"><button class="btn" id="importStartListBtn" type="button">Poimi numerot ja nimet (korvaa)</button></div>
-        <div class="hint">Vinkki: Kopioi lähtölista esim. nettisivulta/Excelistä ja liitä tähän. Ohjelma poimii sarakkeet <b>Nro</b> ja <b>Nimi</b>.</div>
+        <label for="allNames">Lähtölista ja nimet</label>
+        <textarea id="allNames" placeholder="Liitä lähtölista (esim. nettisivulta tai Excelistä) tai kirjoita yksi per rivi:&#10;117 Petra Rautiainen&#10;118=Matti Meikäläinen"></textarea>
+        <div class="hint">Hyväksyy taulukon (sarakkeet <b>Nro</b> ja <b>Nimi</b>), rivit <code>117 Nimi</code> tai <code>117=Nimi</code>. Lähtöaikasarake ohitetaan. Nimet otetaan käyttöön, kun painat Tallenna.</div>
+        <div class="suggest" id="rangeSuggest" style="display:none">
+          <span id="rangeSuggestText"></span>
+          <button class="btn primary" id="rangeSuggestBtn" type="button">Käytä numeroväliä</button>
+        </div>
       </div>
       <div class="actions">
         <button class="btn" id="helpBtn" type="button">Ohje</button>
         <button class="btn" id="stopRaceBtn" type="button">Lopeta kilpailu</button>
-        <button class="btn danger" id="wipeAllBtn" type="button">Lopeta kisa ja palauta kaikki oletukset</button>
+        <button class="btn danger" id="wipeAllBtn" type="button">Palauta kaikki oletukset</button>
         <button class="btn primary" id="saveBtn" type="button">Tallenna</button>
       </div>
       <div class="hint" id="lockHint" style="display:none">* Kisa käynnissä: numeroväliä ja lähtöväliä ei voi muuttaa.</div>
@@ -279,24 +286,23 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.3)</h3>
-      <p style="margin-top:0">Lyhyt käyttöohje:</p>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.4)</h3>
       <ul>
-        <li>Avaa <b>Asetukset</b> (⚙️) ja määritä: <b>kilpailunumeroiden väli</b>, <b>väliaikalähdön aikaväli</b> ja <b>kierrosten määrä</b>.</li>
+        <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
-        <li><b>Tuo lähtölista (nopein)</b>: Kopioi lähtölista (taulukko tai teksti) nettisivulta/Excelistä ja liitä kohtaan <b>Tuo lähtölista</b>. Paina <b>Poimi numerot ja nimet (korvaa)</b> — tämä <u>korvaa</u> Kaikkien nimet -listan.</li>
-        <li>Vaihtoehtoisesti voit syöttää nimet käsin kohtaan <b>Kaikkien nimet</b> muodossa <code>numero=nimi</code>, yksi per rivi.</li>
-        <li>Valitse halutessasi <b>Seurattavat</b> — yksi tai useampi numero pilkuilla eroteltuna (esim. <code>3, 7, 12</code>) — ja lisää <b>Vertailtavat</b> (numerot + nimet).</li>
-        <li>Kun seurattavia on useampi, jokaisesta näkyy ylhäällä oma kortti (sijoitus ja ero kärkeen). <b>Napauta korttia</b> valitaksesi, kenelle vertailuerot ja Sijoitus-tieto lasketaan. Kaikki seurattavat korostetaan vihreällä tuloslistassa ja numeroruudukossa.</li>
-        <li>Kirjaa ohitus: napauta kilpailijan numeroa oikeassa <b>kierros</b>-sarakkeessa. Numero siirtyy automaattisesti seuraavaan kierrokseen. Aika kirjataan kosketuksen alkuhetkellä.</li>
-        <li>Peru viimeisin kirjaus: paina <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua myös pitkällä painalluksella (siirtää takaisin edelliseen kierrokseen).</li>
-        <li><b>Tulosseuranta</b> näyttää erot kärkeen valitulta kierrokselta. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä tuloslistaa vasemmalle/oikealle.</li>
-        <li>Tuloslistan napautus <u>ei vaihda seurattavaa</u> — se vain vierittää näkyviin seurattavan rivin.</li>
-        <li><b>Lopeta kilpailu</b>: Asetuksista voit lopettaa kilpailun ja (valintasi mukaan) tallentaa tulokset TXT-tiedostoon. Lopetuksen jälkeen uusia kirjauksia ei voi tehdä.</li>
-        <li>Kun <b>kaikki kilpailijat ovat valmiit</b> ja numerot on klikattu pois, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
-        <li>Asetukset sulkeutuvat vetämällä paneelia alas <b>kahvasta</b>.</li>
-        <li><b>Päivitys</b> jatkaa samaa kisaa. Jos välilehti suljetaan ja sivu avataan uudelleen, ohjelma kysyy, jatketaanko edellistä kisaa vai aloitetaanko alusta.</li>
-        <li>Näyttö pysyy päällä, kun selain sallii sen (vaatii yleensä https-yhteyden).</li>
+        <li><b>Lähtölista ja nimet</b>: Liitä lähtölista nettisivulta tai Excelistä tai kirjoita rivit muodossa <code>117 Nimi</code> tai <code>117=Nimi</code>. Ohjelma poimii numerot ja nimet ja ohittaa lähtöaikasarakkeen.</li>
+        <li>Kun listalla on numeroita, ohjelma ehdottaa niiden mukaista <b>numeroväliä</b>. Ota se käyttöön painamalla <b>Käytä numeroväliä</b> ja sitten <b>Tallenna</b>.</li>
+        <li>Määritä lisäksi <b>väliaikalähdön aikaväli</b> (s) ja <b>kierrosten määrä</b>. Numeroväliä ja lähtöväliä ei voi muuttaa kisan aikana. Kierrosmäärää voi muuttaa, mutta silloin Peruuta-historia tyhjenee.</li>
+        <li><b>Seurattavat</b>: yksi tai useampi numero pilkuilla eroteltuna, esim. <code>3, 7, 12</code>. Nimet voi antaa muodossa <code>3=Nimi, 7=Nimi</code>. Ilman nimiä käytetään lähtölistan nimiä.</li>
+        <li>Kun seurattavia on useampi, jokaisella on yläreunassa oma kortti: sijoitus, kierros ja ero kärkeen. <b>Napauta korttia</b> valitaksesi, kenelle vertailuerot ja Sijoitus lasketaan. Kaikki seurattavat näkyvät vihreinä tuloslistassa, ja niiden numerot on korostettu ruudukossa.</li>
+        <li><b>Vertailtavat</b>: numerot, joihin aktiivisen seurattavan eroa verrataan. Vihreä miinusaika tarkoittaa, että seurattava on edellä, ja punainen plusaika, että hän on perässä. Edellisen kierroksen erot näkyvät himmeämpinä.</li>
+        <li>Kirjaa ohitus napauttamalla kilpailijan numeroa kierrossarakkeessa. Aika kirjataan kosketuksen alkuhetkellä, ja numero siirtyy seuraavaan sarakkeeseen. Kisan kello käynnistyy ensimmäisestä kirjauksesta.</li>
+        <li>Peru viimeisin kirjaus painamalla <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua <b>pitkällä painalluksella</b>, jolloin numero palaa edelliseen sarakkeeseen.</li>
+        <li><b>Tulosseuranta</b> näyttää erot kärkeen. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä listaa vasemmalle tai oikealle. Listan napautus vierittää seurattavan näkyviin.</li>
+        <li>Kun kaikki ovat maalissa, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
+        <li><b>Lopeta kilpailu</b> pysäyttää ajan ja estää uudet kirjaukset. Valitse <b>Lopeta ja tallenna</b>, jos haluat tulokset TXT-tiedostona. <b>Palauta kaikki oletukset</b> tyhjentää kisan ja asetukset.</li>
+        <li><b>Päivitys</b> jatkaa samaa kisaa. Jos välilehti on suljettu, ohjelma kysyy avattaessa, jatketaanko edellistä kisaa vai aloitetaanko alusta (alle 12 h vanhat kisat).</li>
+        <li>Näyttö pysyy päällä, kun selain sallii sen. Tämä vaatii yleensä https-yhteyden.</li>
       </ul>
       <div class="row"><button class="btn" id="helpCloseBtn" type="button">Sulje</button></div>
     </div>
@@ -338,9 +344,9 @@
     followCards:$('followCards'), followHint:$('followHint'), resultsList:$('resultsList'), resultsLapBadge:$('resultsLapBadge'), sheet:$('sheet'), gearBtn:$('gearBtn'),
     undoBtn:$('undoBtn'), lockHint:$('lockHint'), saveBtn:$('saveBtn'), wipeAllBtn:$('wipeAllBtn'), toast:$('toast'),
     helpBtn:$('helpBtn'), helpModal:$('helpModal'), helpCloseBtn:$('helpCloseBtn'),
-    importStartListBtn:$('importStartListBtn'), stopRaceBtn:$('stopRaceBtn'), stopRaceModal:$('stopRaceModal'),
+    stopRaceBtn:$('stopRaceBtn'), stopRaceModal:$('stopRaceModal'),
     inputs:{ bibStart:$('bibStart'), bibEnd:$('bibEnd'), interval:$('interval'), laps:$('laps'), followBibs:$('followBibs'), followNames:$('followNames'),
-             compareBibs:$('compareBibs'), compareNames:$('compareNames'), allNames:$('allNames'), startListImport:$('startListImport') }
+             compareBibs:$('compareBibs'), compareNames:$('compareNames'), allNames:$('allNames') }
   };
 
   // ===================== Apufunktiot =====================
@@ -409,7 +415,7 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.3', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+  const toPlain = () => ({ version:'4.4', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
     compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
@@ -661,7 +667,8 @@
     i.followBibs.value=(state.followBibs||[]).join(', ');
     i.followNames.value=Object.keys(state.followNames||{}).filter(k=>(state.followBibs||[]).includes(Number(k))).map(k=>`${k}=${state.followNames[k]}`).join(', '); i.compareBibs.value=(state.compareBibs||[]).join(', ');
     i.compareNames.value=Object.keys(state.compareNames||{}).map(k=>`${k}=${state.compareNames[k]}`).join(', ');
-    i.allNames.value=Object.keys(state.allNames||{}).map(k=>`${k}=${state.allNames[k]}`).join('\n');
+    i.allNames.value=formatNames(state.allNames||{});
+    $('rangeSuggest').style.display='none';
   };
   const openSheet = () => { els.sheet.classList.add('open'); els.sheet.setAttribute('aria-hidden','false'); els.gearBtn.style.display='none'; fillInputs(); updateSettingsControls(); applyTheme(getThemeMode()); };
   const closeSheet = () => { els.sheet.classList.remove('open'); els.sheet.setAttribute('aria-hidden','true'); els.gearBtn.style.display='grid'; };
@@ -707,12 +714,37 @@
     const count=Object.keys(out).length; if(count===0&&errors.length===0) errors.push('Yhtään kilpailunumeroa ja nimeä ei löytynyt.');
     return {map:out,count,errors};
   };
-  els.importStartListBtn.addEventListener('click', () => {
-    const parsed=parseStartList(els.inputs.startListImport.value);
-    if (!parsed.count) { showToast(parsed.errors[0]||'Tuonti epäonnistui.'); return; }
-    state.allNames=parsed.map;
-    els.inputs.allNames.value=Object.keys(parsed.map).map(Number).sort((a,b)=>a-b).map(n=>`${n}=${parsed.map[n]}`).join('\n');
-    saveRun(); renderTop(); renderResults(); showToast(`Tuotu ${parsed.count} nimeä (korvattu).`);
+  // Yhdistetty kenttä: "numero=nimi" -rivit + liitetty lähtölista (taulukko tai rivit)
+  const parseNamesAny = (txt) => {
+    const lines=String(txt||'').replace(/\r/g,'').split('\n');
+    const eqLines=lines.filter(l=>/^\s*\d+\s*=/.test(l)), other=lines.filter(l=>l.trim() && !/^\s*\d+\s*=/.test(l));
+    const map=parseNameMap(eqLines.join('\n'));
+    if (other.length) Object.assign(map, parseStartList(other.join('\n')).map);
+    return map;
+  };
+  const formatNames = (map) => Object.keys(map).map(Number).sort((a,b)=>a-b).map(n=>`${n}=${map[n]}`).join('\n');
+  let suggestTimer=null, suggestRange=null;
+  const updateRangeSuggest = () => {
+    const box=$('rangeSuggest'); suggestRange=null;
+    const nums=Object.keys(parseNamesAny(els.inputs.allNames.value)).map(Number).filter(n=>Number.isInteger(n)&&n>=0);
+    if (!nums.length || isRaceRunning()) { box.style.display='none'; return; }
+    const lo=Math.min(...nums), hi=Math.max(...nums);
+    if (hi-lo+1>MAX_BIBS) { box.style.display='none'; return; }
+    if (Number(els.inputs.bibStart.value)===lo && Number(els.inputs.bibEnd.value)===hi) { box.style.display='none'; return; }
+    suggestRange={lo,hi};
+    const gaps=(hi-lo+1)-nums.length;
+    $('rangeSuggestText').textContent=`Listalla ${nums.length} kilpailijaa, numerot ${lo}–${hi}${gaps>0?` (${gaps} puuttuu välistä)`:''}.`;
+    box.style.display='flex';
+  };
+  els.inputs.allNames.addEventListener('input', () => { clearTimeout(suggestTimer); suggestTimer=setTimeout(updateRangeSuggest,300); });
+  els.inputs.bibStart.addEventListener('input', updateRangeSuggest);
+  els.inputs.bibEnd.addEventListener('input', updateRangeSuggest);
+  $('rangeSuggestBtn').addEventListener('click', () => {
+    if (!suggestRange) return;
+    els.inputs.bibStart.value=suggestRange.lo; els.inputs.bibEnd.value=suggestRange.hi;
+    const map=parseNamesAny(els.inputs.allNames.value); els.inputs.allNames.value=formatNames(map);
+    $('rangeSuggest').style.display='none';
+    showToast(`Numeroväli ${suggestRange.lo}–${suggestRange.hi}. Paina Tallenna.`);
   });
 
   // ----- Tallenna -----
@@ -742,7 +774,7 @@
     state.bibStart=newBS; state.bibEnd=newBE; state.interval=newIV; state.laps=lpRaw;
     state.followBibs=fbList; state.followNames=fnMap;
     state.followBib = fbList.includes(state.followBib) ? state.followBib : (fbList.length ? fbList[0] : null);
-    state.compareBibs=parseNumList(i.compareBibs.value); state.compareNames=parseNameMap(i.compareNames.value); state.allNames=parseNameMap(i.allNames.value);
+    state.compareBibs=parseNumList(i.compareBibs.value); state.compareNames=parseNameMap(i.compareNames.value); state.allNames=parseNamesAny(i.allNames.value);
     if (baseChanged) { state.raceStopped=false; state.raceStopMs=null; document.body.classList.remove('race-stopped'); initLists(false); }
     else if (state.laps!==oldLaps) { rebuildColsFromData(); state.history=[]; state.viewLapOverride=null; checkAllFinished(); showToast('Kierrosmäärä muutettu. Peruuta-historia tyhjennettiin.'); }
     saveSettings(); commit(); closeSheet();
