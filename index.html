@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.5)</title>
+  <title>Kilpailuajastin (4.6)</title>
   <script>
     // Aseta teema heti (ei välähdystä). Valinta tallennetaan avaimella 'kaTheme' (ei tyhjene uuden session alussa).
     (function(){
@@ -291,7 +291,7 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.5)</h3>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.6)</h3>
       <ul>
         <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
@@ -420,7 +420,7 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.5', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+  const toPlain = () => ({ version:'4.6', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
     compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
@@ -866,7 +866,7 @@ tr.f td{background:#2ed57333;font-weight:700}tr.c td{background:#ffdd5733}
     const download = () => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type})); a.download=baseName; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
     try {
       const file=new File([html], baseName, {type});
-      if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) { navigator.share({title:'Tulokset', files:[file]}).catch(e=>{ if (e && e.name!=='AbortError') download(); }); return; }
+      if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) { navigator.share({files:[file]})   /* ei title/text: iOS tekisi niistä ylimääräisen tekstitiedoston */.catch(e=>{ if (e && e.name!=='AbortError') download(); }); return; }
     } catch(e) {}
     download();
   };
