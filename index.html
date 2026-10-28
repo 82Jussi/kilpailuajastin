@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.4)</title>
+  <title>Kilpailuajastin (4.5)</title>
   <script>
     // Aseta teema heti (ei välähdystä). Valinta tallennetaan avaimella 'kaTheme' (ei tyhjene uuden session alussa).
     (function(){
@@ -193,9 +193,14 @@
       .results{flex:1}
       .results .list{max-height:none;flex:1}
       .main{height:100dvh;padding:10px}
+      @supports (-webkit-touch-callout: none){ .main{padding-top:calc(env(safe-area-inset-top) + 22px)} }
       .gear{right:auto;left:calc(14px + env(safe-area-inset-left))}
       body.all-finished .app{grid-template-columns:minmax(0,1fr)}
     }
+    /* iOS Safari (iOS 26) sumentaa sivun ylimmän kaistaleen tilarivin alla. Siirretään sisältö sen alapuolelle. */
+    @supports (-webkit-touch-callout: none){
+      .tracking{padding-top:calc(env(safe-area-inset-top) + 22px)}
+        }
     @media (prefers-reduced-motion: reduce){ .sheet,.toast{transition:none} }
   </style>
 </head>
@@ -250,9 +255,9 @@
         <div><label for="laps">Kierrosten määrä</label><input id="laps" type="number" inputmode="numeric" min="1" /></div>
       </div>
       <div class="mt"><label for="followBibs">Seurattavat kilpailunumerot (yksi tai useampi, pilkuilla)</label><input id="followBibs" type="text" inputmode="text" placeholder="3, 7, 12" /></div>
-      <div class="mt"><label for="followNames">Seurattavien nimet (valinnainen, numero=nimi, …)</label><input id="followNames" type="text" placeholder="3=K. Niskanen, 7=M. Mäkinen" /></div>
+      <div class="mt"><label for="followNames">Seurattavien nimet (valinnainen, numero=nimi, …)</label><input id="followNames" type="text" placeholder="Täydentyy lähtölistasta, tai 3=Nimi, 7=Nimi" /></div>
       <div class="mt"><label for="compareBibs">Vertailunumerot (pilkuilla eroteltu)</label><input id="compareBibs" type="text" placeholder="2, 3, 4" /></div>
-      <div class="mt"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="2=A. Virtanen, 3=E. Heikkinen" /></div>
+      <div class="mt"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="Täydentyy lähtölistasta, tai 2=Nimi, 4=Nimi" /></div>
       <div class="mt">
         <label for="allNames">Lähtölista ja nimet</label>
         <textarea id="allNames" placeholder="Liitä lähtölista (esim. nettisivulta tai Excelistä) tai kirjoita yksi per rivi:&#10;117 Petra Rautiainen&#10;118=Matti Meikäläinen"></textarea>
@@ -286,21 +291,21 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.4)</h3>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.5)</h3>
       <ul>
         <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
         <li><b>Lähtölista ja nimet</b>: Liitä lähtölista nettisivulta tai Excelistä tai kirjoita rivit muodossa <code>117 Nimi</code> tai <code>117=Nimi</code>. Ohjelma poimii numerot ja nimet ja ohittaa lähtöaikasarakkeen.</li>
         <li>Kun listalla on numeroita, ohjelma ehdottaa niiden mukaista <b>numeroväliä</b>. Ota se käyttöön painamalla <b>Käytä numeroväliä</b> ja sitten <b>Tallenna</b>.</li>
         <li>Määritä lisäksi <b>väliaikalähdön aikaväli</b> (s) ja <b>kierrosten määrä</b>. Numeroväliä ja lähtöväliä ei voi muuttaa kisan aikana. Kierrosmäärää voi muuttaa, mutta silloin Peruuta-historia tyhjenee.</li>
-        <li><b>Seurattavat</b>: yksi tai useampi numero pilkuilla eroteltuna, esim. <code>3, 7, 12</code>. Nimet voi antaa muodossa <code>3=Nimi, 7=Nimi</code>. Ilman nimiä käytetään lähtölistan nimiä.</li>
+        <li><b>Seurattavat</b>: yksi tai useampi numero pilkuilla eroteltuna, esim. <code>3, 7, 12</code>. Jos lähtölista on syötetty, nimet täydentyvät automaattisesti, kun lisäät numeron. Käsin kirjoitettu nimi säilyy. Sama koskee vertailtavia.</li>
         <li>Kun seurattavia on useampi, jokaisella on yläreunassa oma kortti: sijoitus, kierros ja ero kärkeen. <b>Napauta korttia</b> valitaksesi, kenelle vertailuerot ja Sijoitus lasketaan. Kaikki seurattavat näkyvät vihreinä tuloslistassa, ja niiden numerot on korostettu ruudukossa.</li>
         <li><b>Vertailtavat</b>: numerot, joihin aktiivisen seurattavan eroa verrataan. Vihreä miinusaika tarkoittaa, että seurattava on edellä, ja punainen plusaika, että hän on perässä. Edellisen kierroksen erot näkyvät himmeämpinä.</li>
         <li>Kirjaa ohitus napauttamalla kilpailijan numeroa kierrossarakkeessa. Aika kirjataan kosketuksen alkuhetkellä, ja numero siirtyy seuraavaan sarakkeeseen. Kisan kello käynnistyy ensimmäisestä kirjauksesta.</li>
         <li>Peru viimeisin kirjaus painamalla <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua <b>pitkällä painalluksella</b>, jolloin numero palaa edelliseen sarakkeeseen.</li>
         <li><b>Tulosseuranta</b> näyttää erot kärkeen. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä listaa vasemmalle tai oikealle. Listan napautus vierittää seurattavan näkyviin.</li>
         <li>Kun kaikki ovat maalissa, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
-        <li><b>Lopeta kilpailu</b> pysäyttää ajan ja estää uudet kirjaukset. Valitse <b>Lopeta ja tallenna</b>, jos haluat tulokset TXT-tiedostona. <b>Palauta kaikki oletukset</b> tyhjentää kisan ja asetukset.</li>
+        <li><b>Lopeta kilpailu</b> pysäyttää ajan ja estää uudet kirjaukset. Valitse <b>Lopeta ja tallenna</b>, jos haluat tulokset tiedostona. Tulokset tallentuvat taulukkona (HTML), joka aukeaa selaimessa ja puhelimen Tiedostot-sovelluksessa. Taulukon voi myös tulostaa tai kopioida Exceliin. <b>Palauta kaikki oletukset</b> tyhjentää kisan ja asetukset.</li>
         <li><b>Päivitys</b> jatkaa samaa kisaa. Jos välilehti on suljettu, ohjelma kysyy avattaessa, jatketaanko edellistä kisaa vai aloitetaanko alusta (alle 12 h vanhat kisat).</li>
         <li>Näyttö pysyy päällä, kun selain sallii sen. Tämä vaatii yleensä https-yhteyden.</li>
       </ul>
@@ -415,7 +420,7 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.4', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+  const toPlain = () => ({ version:'4.5', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
     compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
@@ -736,7 +741,27 @@
     $('rangeSuggestText').textContent=`Listalla ${nums.length} kilpailijaa, numerot ${lo}–${hi}${gaps>0?` (${gaps} puuttuu välistä)`:''}.`;
     box.style.display='flex';
   };
-  els.inputs.allNames.addEventListener('input', () => { clearTimeout(suggestTimer); suggestTimer=setTimeout(updateRangeSuggest,300); });
+  // Seurattavien ja vertailtavien nimet täydentyvät lähtölistasta. Käsin kirjoitettu nimi säilyy.
+  const autofillNames = (bibsInput, namesInput, sep) => {
+    const nums=[...new Set(String(bibsInput.value).split(/[,;\s]+/).filter(t=>/^\d+$/.test(t)).map(Number))];
+    const raw=namesInput.value.trim();
+    const current = (raw && !raw.includes('=') && nums.length===1) ? {[nums[0]]:raw} : parseNameMap(raw);
+    const list=parseNamesAny(els.inputs.allNames.value);
+    const parts=[];
+    nums.forEach(n => { const nm=current[n] || list[n]; if (nm) parts.push(`${n}=${nm}`); });
+    const next=parts.join(sep);
+    if (next!==namesInput.value) namesInput.value=next;
+  };
+  const autofillAll = () => {
+    autofillNames(els.inputs.followBibs, els.inputs.followNames, ', ');
+    autofillNames(els.inputs.compareBibs, els.inputs.compareNames, ', ');
+  };
+  let afTimer=null; const autofillSoon = () => { clearTimeout(afTimer); afTimer=setTimeout(autofillAll,350); };
+  els.inputs.followBibs.addEventListener('input', autofillSoon);
+  els.inputs.compareBibs.addEventListener('input', autofillSoon);
+  els.inputs.followBibs.addEventListener('change', autofillAll);
+  els.inputs.compareBibs.addEventListener('change', autofillAll);
+  els.inputs.allNames.addEventListener('input', () => { clearTimeout(suggestTimer); suggestTimer=setTimeout(()=>{ updateRangeSuggest(); autofillAll(); },300); });
   els.inputs.bibStart.addEventListener('input', updateRangeSuggest);
   els.inputs.bibEnd.addEventListener('input', updateRangeSuggest);
   $('rangeSuggestBtn').addEventListener('click', () => {
@@ -749,6 +774,7 @@
 
   // ----- Tallenna -----
   els.saveBtn.addEventListener('click', async () => {
+    clearTimeout(afTimer); autofillAll();
     const i=els.inputs, running=isRaceRunning();
     const bS=numOr(i.bibStart.value,null), bE=numOr(i.bibEnd.value,null), iv=numOr(i.interval.value,null), lpRaw=numOr(i.laps.value,null);
     const err = (m) => { showToast(m, 3200); };
@@ -796,36 +822,51 @@
   els.helpModal.addEventListener('click', (e) => { if (e.target===els.helpModal) closeHelp(); });
 
   // ===================== Lopetus & vienti =====================
+  const escHtml = (t) => String(t??'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  // Tulokset tallennetaan HTML-taulukkona: sarakkeet pysyvät kohdallaan millä tahansa laitteella.
   const exportResults = () => {
-    const now=new Date(); const baseName=`tulokset_${fmtLocal(now).replace(/[: ]/g,'-')}.txt`;
-    const lines=['KILPAILUN TULOKSET', `Luotu:\t${fmtLocal(now)}`, `Numeroväli:\t${state.bibStart}–${state.bibEnd}`, `Lähtöväli:\t${state.interval} s`, `Kierrokset:\t${state.laps}`];
-    if ((state.followBibs||[]).length) lines.push(`Seurattava${state.followBibs.length>1?'t':''}:\t${state.followBibs.map(b=>{ const fn=resolveDisplayName(b); return `#${b}${fn?' '+fn:''}`; }).join(', ')}`);
-    lines.push('');
-    const race0=state.raceStartMs; const passClockMap=new Map();
-    for (let bib=state.bibStart; bib<=state.bibEnd; bib++) { const d=state.data.get(bib); if(!d||!d.passes.length) continue; passClockMap.set(bib, d.passes.map(ms => race0 ? fmtT(ms-race0) : '--:--.-')); }
+    const now=new Date(); const stamp=fmtLocal(now); const baseName=`tulokset_${stamp.replace(/[: ]/g,'-')}.html`;
+    const race0=state.raceStartMs;
+    const clocks = (bib) => { const d=state.data.get(bib); return (d&&race0) ? d.passes.map(ms=>fmtT(ms-race0)) : []; };
+    const rowCls = (bib) => isFollowed(bib) ? ' class="f"' : (state.compareBibs.includes(bib) ? ' class="c"' : '');
+    const info=[['Luotu',stamp],['Numeroväli',`${state.bibStart}–${state.bibEnd}`],['Lähtöväli',`${state.interval} s`],['Kierrokset',String(state.laps)]];
+    if ((state.followBibs||[]).length) info.push([state.followBibs.length>1?'Seurattavat':'Seurattava', state.followBibs.map(b=>{ const n=resolveDisplayName(b); return `#${b}${n?' '+n:''}`; }).join(', ')]);
+    if ((state.compareBibs||[]).length) info.push(['Vertailtavat', state.compareBibs.map(b=>{ const n=resolveDisplayName(b); return `#${b}${n?' '+n:''}`; }).join(', ')]);
+    let body=`<h1>Kilpailun tulokset</h1><table class="info">${info.map(([k,v])=>`<tr><th>${escHtml(k)}</th><td>${escHtml(v)}</td></tr>`).join('')}</table><p class="note">Ero = ero kärkeen (lähtöväli huomioitu). Ohitus = kisan kello ohitushetkellä.</p>`;
     for (let lap=1; lap<=state.laps; lap++) {
       const eligible=(computePosition(lap).arr||[]).filter(x=>x.laps>=lap);
-      lines.push(`KIERROS ${lap}`);
-      if (!eligible.length) { lines.push('Ei tuloksia.',''); continue; }
-      const leaderAdj=Math.min(...eligible.map(x=>x.adj));
-      lines.push('sija\tnumero\tnimi\tero kärkeen\tohitukset (kellonajat)');
+      body+=`<h2>Kierros ${lap}</h2>`;
+      if (!eligible.length) { body+='<p>Ei tuloksia.</p>'; continue; }
+      const lead=Math.min(...eligible.map(x=>x.adj));
+      const clockHead = lap>1 ? 'Ohitukset' : 'Ohitus';
+      body+=`<table><thead><tr><th class="n">Sija</th><th class="n">Nro</th><th>Nimi</th><th class="n">Ero</th><th class="n">${clockHead}</th></tr></thead><tbody>`;
       eligible.forEach((x,idx) => {
-        const delta=x.adj-leaderAdj; const deltaStr=(idx===0||delta===0) ? fmtT(0) : ('+'+fmtT(delta));
-        lines.push(`${idx+1}\t${x.bib}\t${resolveDisplayName(x.bib)}\t${deltaStr}\t${(passClockMap.get(x.bib)||[]).slice(0,lap).join(', ')}`);
+        const d=x.adj-lead; const ds=(idx===0||d===0)?fmtT(0):'+'+fmtT(d);
+        body+=`<tr${rowCls(x.bib)}><td class="n">${idx+1}</td><td class="n">${x.bib}</td><td>${escHtml(resolveDisplayName(x.bib))}</td><td class="n">${ds}</td><td class="n">${clocks(x.bib).slice(0,lap).join('<br>')}</td></tr>`;
       });
-      lines.push('');
+      body+='</tbody></table>';
     }
-    const unfinished=[]; passClockMap.forEach((clocks,bib) => { const n=state.data.get(bib).passes.length; if(n<state.laps) unfinished.push({bib,nm:resolveDisplayName(bib),n,clocks}); });
+    const unfinished=[]; for (let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); const n=d?d.passes.length:0; if(n>0 && n<state.laps) unfinished.push({b,n}); }
     if (unfinished.length) {
-      lines.push('KESKEN (ei vielä kaikkia kierroksia)','numero\tnimi\tohituksia\tohitukset (kellonajat)');
-      unfinished.sort((a,b)=>a.bib-b.bib).forEach(u => lines.push(`${u.bib}\t${u.nm}\t${u.n}/${state.laps}\t${u.clocks.join(', ')}`));
-      lines.push('');
+      body+=`<h2>Kesken (ei vielä kaikkia kierroksia)</h2><table><thead><tr><th class="n">Nro</th><th>Nimi</th><th class="n">Kier.</th><th class="n">Ohitukset</th></tr></thead><tbody>`;
+      unfinished.forEach(u => { body+=`<tr${rowCls(u.b)}><td class="n">${u.b}</td><td>${escHtml(resolveDisplayName(u.b))}</td><td class="n">${u.n}/${state.laps}</td><td class="n">${clocks(u.b).join('<br>')}</td></tr>`; });
+      body+='</tbody></table>';
     }
-    const txt='\ufeff'+lines.join('\n');   // BOM: ä/ö/å Excelissä ja Muistiossa
-    const download = () => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain;charset=utf-8'})); a.download=baseName; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
+    const css=`:root{color-scheme:light dark}body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif;margin:12px;font-size:14px;line-height:1.3}
+h1{font-size:20px;margin:0 0 10px}h2{font-size:17px;margin:20px 0 6px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+th,td{padding:5px 4px;text-align:left;vertical-align:top;border-bottom:1px solid #8884}
+thead th{font-size:13px;border-bottom:2px solid #888}
+.n{text-align:right;white-space:nowrap}
+.note{font-size:12px;opacity:.75;margin:4px 0 0}.info{width:auto;margin-bottom:2px}.info th,.info td{padding:2px 4px}.info th{font-weight:600;padding-right:14px;border:none}.info td{border:none}
+tr.f td{background:#2ed57333;font-weight:700}tr.c td{background:#ffdd5733}
+@media print{body{margin:8mm}}`;
+    const html=`<!DOCTYPE html><html lang="fi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Tulokset ${escHtml(stamp)}</title><style>${css}</style></head><body>${body}</body></html>`;
+    const type='text/html;charset=utf-8';
+    const download = () => { const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([html],{type})); a.download=baseName; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); };
     try {
-      const file=new File([txt], baseName, {type:'text/plain;charset=utf-8'});
-      if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) { navigator.share({title:'Tulokset', text:'Kilpailun tulokset (TXT)', files:[file]}).catch(()=>download()); return; }
+      const file=new File([html], baseName, {type});
+      if (navigator.canShare && navigator.share && navigator.canShare({files:[file]})) { navigator.share({title:'Tulokset', files:[file]}).catch(e=>{ if (e && e.name!=='AbortError') download(); }); return; }
     } catch(e) {}
     download();
   };
