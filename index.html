@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.8)</title>
+  <title>Kilpailuajastin (4.9)</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
@@ -138,6 +138,11 @@
       box-shadow:var(--shadow);user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
     .bibbtn.pressed{transform:scale(.96);filter:brightness(1.25)}
     html[data-theme="light"] .bibbtn.pressed{filter:brightness(.88)}
+    .bibbtn.late{opacity:.45;border-style:dashed}
+    .col h3{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:pan-y;cursor:pointer}
+    .col h3.pressed{filter:brightness(1.3)}
+    html[data-theme="light"] .col h3.pressed{filter:brightness(.88)}
+    .col h3 .late-n{color:var(--sub);font-weight:700}
     .bibbtn.following{outline:4px solid var(--accent);outline-offset:1px}
 
     /* ===================== ASETUKSET ===================== */
@@ -273,6 +278,8 @@
         <div class="rows" id="seriesLapsRows"></div>
         <div class="hint">Uusi sarja saa oletuksena yllä olevan kierrosmäärän.</div>
       </div>
+      <div class="mt"><label for="lateLimit">Siirrä numero sarakkeen loppuun, kun myöhemmin lähteneitä on ohittanut (0 = pois)</label><input id="lateLimit" type="number" inputmode="numeric" min="0" max="999" /></div>
+      <div class="suggest" id="hiddenBox" style="display:none"><span id="hiddenText"></span><button class="btn" id="restoreHiddenBtn" type="button">Palauta piilotetut</button></div>
       <div class="mt"><label for="followBibs">Seurattavat kilpailunumerot (yksi tai useampi, pilkuilla)</label><input id="followBibs" type="text" inputmode="text" placeholder="3, 7, 12" /></div>
       <div class="mt"><label for="followNames">Seurattavien nimet (valinnainen, numero=nimi, …)</label><input id="followNames" type="text" placeholder="Täydentyy lähtölistasta, tai 3=Nimi, 7=Nimi" /></div>
       <div class="mt"><label for="compareBibs">Vertailunumerot (pilkuilla eroteltu)</label><input id="compareBibs" type="text" placeholder="2, 3, 4" /></div>
@@ -310,7 +317,7 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.8)</h3>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.9)</h3>
       <ul>
         <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
@@ -324,6 +331,8 @@
         <li>Kun seurattavia on useampi, jokaisella on yläreunassa oma kortti: sijoitus, kierros ja ero kärkeen. <b>Napauta korttia</b> valitaksesi, kenelle vertailuerot ja Sijoitus lasketaan. Kaikki seurattavat näkyvät vihreinä tuloslistassa, ja niiden numerot on korostettu ruudukossa.</li>
         <li><b>Vertailtavat</b>: numerot, joihin aktiivisen seurattavan eroa verrataan. Vihreä miinusaika tarkoittaa, että seurattava on edellä, ja punainen plusaika, että hän on perässä. Edellisen kierroksen erot näkyvät himmeämpinä.</li>
         <li>Kirjaa ohitus napauttamalla kilpailijan numeroa kierrossarakkeessa. Aika kirjataan kosketuksen alkuhetkellä, ja numero siirtyy seuraavaan sarakkeeseen. Kisan kello käynnistyy ensimmäisestä kirjauksesta.</li>
+        <li><b>Puuttuvat numerot</b>: jos kilpailijaa ei ole näkynyt, mutta hänen jälkeensä lähteneitä saman sarjan kilpailijoita on jo ohittanut asetuksissa valittu määrä (oletus 5), numero himmenee ja siirtyy sarakkeen loppuun. Jos kilpailija saapuu, hänet kirjataan normaalisti. Arvo 0 poistaa toiminnon käytöstä.</li>
+        <li><b>Kierroksen piilotus</b>: paina kierrossarakkeen otsikkoa pitkään. Vahvistuksen jälkeen sarakkeen jäljellä olevat numerot piilotetaan, ja niiden katsotaan jääneen pois. Jos sarakkeeseen saapuu myöhemmin uusia kilpailijoita, ne näkyvät normaalisti. Piilotuksen voi perua Peruuta-painikkeella tai palauttaa asetuksista (<b>Palauta piilotetut</b>).</li>
         <li>Peru viimeisin kirjaus painamalla <b>Peruuta</b>. Yksittäisen kilpailijan edellisen ohituksen voi perua <b>pitkällä painalluksella</b>, jolloin numero palaa edelliseen sarakkeeseen.</li>
         <li><b>Tulosseuranta</b> näyttää erot kärkeen. Jos kierroksia on useita, vaihda kierrosta pyyhkäisemällä listaa vasemmalle tai oikealle. Listan napautus vierittää seurattavan näkyviin.</li>
         <li>Kun kaikki ovat maalissa, numeroruudukko piiloutuu ja tulosseuranta laajenee.</li>
@@ -352,7 +361,7 @@
   <script>
   'use strict';
   // ===================== Vakiot & avaimet =====================
-  const makeDefaults = () => ({ bibStart:1, bibEnd:10, interval:30, laps:1, followBib:null, followBibs:[], followNames:{}, compareBibs:[], compareNames:{}, allNames:{}, seriesMap:{}, seriesOrder:[], seriesLaps:{} });
+  const makeDefaults = () => ({ bibStart:1, bibEnd:10, interval:30, laps:1, followBib:null, followBibs:[], followNames:{}, compareBibs:[], compareNames:{}, allNames:{}, seriesMap:{}, seriesOrder:[], seriesLaps:{}, lateLimit:5, hiddenBibs:[] });
   const MAX_LAPS = 20, MAX_BIBS = 2000, LONG_PRESS_MS = 600, MOVE_PX = 10, RESUME_MAX_AGE_MS = 12*3600*1000;
   const STORAGE_SETTINGS_KEY = 'skiTimerSettingsV4.1';
   const STORAGE_RUN_KEY      = 'skiTimerRun_V4.1';
@@ -370,11 +379,11 @@
     columns:$('columns'), followLabel:$('followLabel'), posLabel:$('posLabel'), topChips:$('topChips'), lapBadge:$('lapBadge'),
     prevRow:$('prevRow'), prevLabel:$('prevLabel'), prevChips:$('prevChips'), raceClock:$('raceClock'),
     followCards:$('followCards'), followHint:$('followHint'), resultsList:$('resultsList'), resultsLapBadge:$('resultsLapBadge'), sheet:$('sheet'), gearBtn:$('gearBtn'),
-    undoBtn:$('undoBtn'), seriesBtn:$('seriesBtn'), lockHint:$('lockHint'), saveBtn:$('saveBtn'), wipeAllBtn:$('wipeAllBtn'), toast:$('toast'),
+    undoBtn:$('undoBtn'), seriesBtn:$('seriesBtn'), hiddenBox:$('hiddenBox'), lockHint:$('lockHint'), saveBtn:$('saveBtn'), wipeAllBtn:$('wipeAllBtn'), toast:$('toast'),
     helpBtn:$('helpBtn'), helpModal:$('helpModal'), helpCloseBtn:$('helpCloseBtn'),
     stopRaceBtn:$('stopRaceBtn'), stopRaceModal:$('stopRaceModal'),
     inputs:{ bibStart:$('bibStart'), bibEnd:$('bibEnd'), interval:$('interval'), laps:$('laps'), followBibs:$('followBibs'), followNames:$('followNames'),
-             compareBibs:$('compareBibs'), compareNames:$('compareNames'), allNames:$('allNames') }
+             compareBibs:$('compareBibs'), compareNames:$('compareNames'), allNames:$('allNames'), lateLimit:$('lateLimit') }
   };
 
   // ===================== Apufunktiot =====================
@@ -386,6 +395,7 @@
   const numOr = (v, d) => { if (v===null || v===undefined || (typeof v==='string' && v.trim()==='')) return d; const n=Number(v); return Number.isFinite(n) ? n : d; };
   // state.followBib = aktiivinen seurattava (vertailuerot ja Sijoitus lasketaan hänelle), state.followBibs = kaikki seurattavat
   const hasFollow = () => Number.isFinite(state.followBib);
+  const isHidden = (bib) => Array.isArray(state.hiddenBibs) && state.hiddenBibs.includes(bib);
   const isFollowed = (bib) => Array.isArray(state.followBibs) && state.followBibs.includes(bib);
   // ===================== Sarjat =====================
   // bibSeries: numero -> sarja. Listalta puuttuva numero kuuluu lähimmän pienemmän (tai suuremman) listatun numeron sarjaan.
@@ -505,8 +515,8 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.8', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
-    compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, seriesMap:state.seriesMap, seriesOrder:state.seriesOrder, seriesLaps:state.seriesLaps, viewSeries:state.viewSeries, seriesFollow:state.seriesFollow, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
+  const toPlain = () => ({ version:'4.9', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+    compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, seriesMap:state.seriesMap, seriesOrder:state.seriesOrder, seriesLaps:state.seriesLaps, lateLimit:state.lateLimit, hiddenBibs:state.hiddenBibs, viewSeries:state.viewSeries, seriesFollow:state.seriesFollow, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
   const fromPlain = (obj) => { try{
@@ -517,6 +527,7 @@
     state.followBib = (obj.followBib===null || obj.followBib===undefined || obj.followBib==='') ? null : numOr(obj.followBib,null);
     state.followBibs=Array.isArray(obj.followBibs)?obj.followBibs:[]; state.followNames=(obj.followNames&&typeof obj.followNames==='object')?obj.followNames:{};
     state.seriesMap=(obj.seriesMap&&typeof obj.seriesMap==='object')?obj.seriesMap:{}; state.seriesOrder=Array.isArray(obj.seriesOrder)?obj.seriesOrder:[]; state.seriesLaps=(obj.seriesLaps&&typeof obj.seriesLaps==='object')?obj.seriesLaps:{};
+    state.lateLimit=Math.max(0,Math.floor(numOr(obj.lateLimit,D.lateLimit))); state.hiddenBibs=Array.isArray(obj.hiddenBibs)?obj.hiddenBibs.map(Number).filter(Number.isFinite):[];
     state.viewSeries=typeof obj.viewSeries==='string'?obj.viewSeries:''; state.seriesFollow=(obj.seriesFollow&&typeof obj.seriesFollow==='object')?obj.seriesFollow:{};
     rebuildSeries();
     normalizeFollow(obj.followName||'');
@@ -532,7 +543,7 @@
     return true;
   }catch(e){ return false; } };
   const lsGet = (k) => { try{ return localStorage.getItem(k); }catch{ return null; } };
-  const saveSettings = () => { try{ localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify({ bibStart:state.bibStart,bibEnd:state.bibEnd,interval:state.interval,laps:state.laps,seriesLaps:state.seriesLaps,followBib:state.followBib,followBibs:state.followBibs,followNames:state.followNames,compareBibs:state.compareBibs,compareNames:state.compareNames })); }catch{} };
+  const saveSettings = () => { try{ localStorage.setItem(STORAGE_SETTINGS_KEY, JSON.stringify({ bibStart:state.bibStart,bibEnd:state.bibEnd,interval:state.interval,laps:state.laps,seriesLaps:state.seriesLaps,lateLimit:state.lateLimit,followBib:state.followBib,followBibs:state.followBibs,followNames:state.followNames,compareBibs:state.compareBibs,compareNames:state.compareNames })); }catch{} };
   const saveRun = () => { try{ localStorage.setItem(STORAGE_RUN_KEY, JSON.stringify(toPlain())); }catch{} };
   const peekSavedRun = () => { try{ const raw = lsGet(STORAGE_RUN_KEY) || lsGet(LEGACY_RUN_KEY); return raw ? JSON.parse(raw) : null; }catch{ return null; } };
   const loadSettings = () => { try{ const raw = lsGet(STORAGE_SETTINGS_KEY) || lsGet(LEGACY_SETTINGS_KEY); if(raw){ const o=JSON.parse(raw); Object.assign(state, makeDefaults(), o); normalizeFollow(o.followName||''); } }catch{} };
@@ -561,7 +572,7 @@
   // Sarakkeet johdetaan datasta: kilpailija on sarakkeessa (ohitusten määrä), jos ei ole vielä valmis.
   const rebuildColsFromData = () => {
     state.cols = Array.from({length:colCount()},()=>[]);
-    for (let b=state.bibStart; b<=state.bibEnd; b++) { const n=(state.data.get(b)?.passes.length)||0; if (n<lapsOf(b)) state.cols[n].push(b); }
+    for (let b=state.bibStart; b<=state.bibEnd; b++) { if (isHidden(b)) continue; const n=(state.data.get(b)?.passes.length)||0; if (n<lapsOf(b)) state.cols[n].push(b); }
   };
   const insertSorted = (arr, bib) => { if(!arr || arr.includes(bib)) return; let i=0; while(i<arr.length && arr[i]<bib) i++; arr.splice(i,0,bib); };
   const moveBib = (from,to,bib) => {
@@ -579,7 +590,7 @@
     updateRaceClock();
   };
   const checkAllFinished = () => {
-    let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); if(d && d.passes.length>=lapsOf(b)) finished++; }
+    let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); if(isHidden(b) || (d && d.passes.length>=lapsOf(b))) finished++; }
     state.finishedCount=finished;
     const allDone = finished>0 && finished===totalBibs();
     if (allDone) { if (state.raceStopMs==null) state.raceStopMs=Date.now(); }
@@ -676,6 +687,17 @@
   const scrollFollowIntoView = () => { const t=els.resultsList.querySelector(`.res-item[data-bib="${state.followBib}"]`)||els.resultsList.querySelector('.res-item.follow'); if (t) t.scrollIntoView({behavior:'smooth',block:'center'}); };
   els.resultsList.addEventListener('click', scrollFollowIntoView);
 
+  // Myöhässä olevat: saman sarjan myöhemmin lähteneitä (suurempi numero) on jo ohittanut tämän sarakkeen vähintään lateLimit kpl
+  const lateSetFor = (colIdx) => {
+    const out=new Set(); const lim=Math.floor(numOr(state.lateLimit,0)); if (lim<1) return out;
+    const cnt=new Map();
+    for (let b=state.bibEnd; b>=state.bibStart; b--) {
+      const n=(state.data.get(b)?.passes.length)||0; const ser=seriesOf(b);
+      if (n===colIdx && !isHidden(b) && (cnt.get(ser)||0)>=lim) out.add(b);
+      if (n>colIdx) cnt.set(ser,(cnt.get(ser)||0)+1);
+    }
+    return out;
+  };
   const renderColumns = () => {
     const scrolls={}; els.columns.querySelectorAll('.col').forEach(c => { const l=c.querySelector('.list'); if(l) scrolls[c.dataset.col]=l.scrollTop; });
     els.columns.innerHTML='';
@@ -683,9 +705,13 @@
     for (let i=0;i<colCount();i++) {
       const bibs=state.cols[i]||[]; if (!bibs.length) continue;
       const col=document.createElement('div'); col.className='col'; col.dataset.col=String(i);
-      const h=document.createElement('h3'); const t=document.createElement('span'); t.textContent=labelForCol(i); const c=document.createElement('span'); c.className='count'; c.textContent=String(bibs.length); h.appendChild(t); h.appendChild(c);
+      const late=lateSetFor(i); const ordered=[...bibs.filter(b=>!late.has(b)), ...bibs.filter(b=>late.has(b))];
+      const h=document.createElement('h3'); h.title='Pitkä painallus: piilota kierroksen numerot';
+      const t=document.createElement('span'); t.textContent=labelForCol(i); const c=document.createElement('span'); c.className='count'; c.textContent=String(bibs.length);
+      if (late.size) { const ln=document.createElement('span'); ln.className='late-n'; ln.textContent=` · ${late.size} myöh.`; c.appendChild(ln); }
+      h.appendChild(t); h.appendChild(c);
       const list=document.createElement('div'); list.className='list'; list.id=`list-${i}`;
-      bibs.forEach(bib => { const b=document.createElement('button'); b.className='bibbtn'; b.type='button'; b.textContent=bib; b.dataset.bib=String(bib); if(isFollowed(bib)) b.classList.add('following'); list.appendChild(b); });
+      ordered.forEach(bib => { const b=document.createElement('button'); b.className='bibbtn'; b.type='button'; b.textContent=bib; b.dataset.bib=String(bib); if(isFollowed(bib)) b.classList.add('following'); if(late.has(bib)) b.classList.add('late'); list.appendChild(b); });
       col.appendChild(h); col.appendChild(list); frag.appendChild(col);
     }
     els.columns.appendChild(frag);
@@ -722,6 +748,10 @@
   const undoLast = () => {
     if (state.raceStopped) return;
     const last=(state.history||[]).pop(); if (!last) { setUndoEnabled(); return; }
+    if (last.type==='hide') {
+      state.hiddenBibs=(state.hiddenBibs||[]).filter(b=>!last.bibs.includes(b)); rebuildColsFromData();
+      checkAllFinished(); commit(); showToast(`${last.bibs.length} numeroa palautettu`); return;
+    }
     removeLastPass(last.bib); setViewSeries(seriesOf(last.bib));
     if (last.toCol===null) { state.cols[last.fromCol]=state.cols[last.fromCol]||[]; insertSorted(state.cols[last.fromCol], last.bib); }
     else moveBib(last.toCol, last.fromCol, last.bib);
@@ -736,6 +766,30 @@
   });
 
   // Numeroruudukon kosketus: yksi delegoitu kuuntelija (pointer events). Ei kaksoislaukaisua touch+click -yhdistelmästä.
+  const hideColumn = async (colIdx) => {
+    if (state.raceStopped) return;
+    const bibs=(state.cols[colIdx]||[]).slice(); if (!bibs.length) return;
+    const ok=await askConfirm({ title:`Piilotetaanko ${labelForCol(colIdx)}?`, text:`Sarakkeen ${bibs.length} numeroa (${bibs.length>12?bibs.slice(0,12).join(', ')+', …':bibs.join(', ')}) piilotetaan, ja niiden katsotaan jääneen pois. Myöhemmin saapuvat näkyvät normaalisti. Voit perua Peruuta-painikkeella tai palauttaa asetuksista.`, ok:'Piilota', cancel:'Peru' });
+    if (!ok) return;
+    state.hiddenBibs=[...new Set([...(state.hiddenBibs||[]), ...bibs])];
+    state.cols[colIdx]=[];
+    state.history=state.history||[]; state.history.push({type:'hide', col:colIdx, bibs});
+    checkAllFinished(); commit(); showToast(`${bibs.length} numeroa piilotettu`);
+  };
+  (function attachHeaderPress(){
+    let hp=null;
+    const clear = () => { if (hp) { clearTimeout(hp.timer); hp.h.classList.remove('pressed'); hp=null; } };
+    els.columns.addEventListener('pointerdown', (e) => {
+      if (e.pointerType==='mouse' && e.button!==0) return;
+      const h=e.target.closest('.col h3'); if (!h) return;
+      clear(); h.classList.add('pressed');
+      const col=Number(h.closest('.col').dataset.col);
+      hp={ id:e.pointerId, x:e.clientX, y:e.clientY, h, timer:setTimeout(() => { if(!hp) return; clear(); vibrate(40); hideColumn(col); }, LONG_PRESS_MS) };
+    });
+    els.columns.addEventListener('pointermove', (e) => { if (hp && e.pointerId===hp.id && (Math.abs(e.clientX-hp.x)>MOVE_PX || Math.abs(e.clientY-hp.y)>MOVE_PX)) clear(); });
+    els.columns.addEventListener('pointerup', clear);
+    els.columns.addEventListener('pointercancel', clear);
+  })();
   (function attachBibInput(){
     let press=null;
     const clearPress = () => { if (press) { clearTimeout(press.timer); press.btn.classList.remove('pressed'); press=null; } };
@@ -757,13 +811,13 @@
   })();
 
   const initLists = (persist=true) => {
-    state.data.clear(); state.raceStartMs=null; state.raceStopMs=null; state.finishedCount=0; state.history=[]; state.viewLapOverride=null;
+    state.data.clear(); state.raceStartMs=null; state.raceStopMs=null; state.finishedCount=0; state.history=[]; state.viewLapOverride=null; state.hiddenBibs=[];
     rebuildColsFromData(); renderAll(); if (persist) saveRun();
   };
 
   // ===================== Asetuspaneeli =====================
   const fillInputs = () => {
-    const i=els.inputs; i.bibStart.value=state.bibStart; i.bibEnd.value=state.bibEnd; i.interval.value=state.interval; i.laps.value=state.laps;
+    const i=els.inputs; i.bibStart.value=state.bibStart; i.bibEnd.value=state.bibEnd; i.interval.value=state.interval; i.laps.value=state.laps; i.lateLimit.value=numOr(state.lateLimit,5); renderHiddenBox();
     i.followBibs.value=(state.followBibs||[]).join(', ');
     i.followNames.value=Object.keys(state.followNames||{}).filter(k=>(state.followBibs||[]).includes(Number(k))).map(k=>`${k}=${state.followNames[k]}`).join(', '); i.compareBibs.value=(state.compareBibs||[]).join(', ');
     i.compareNames.value=Object.keys(state.compareNames||{}).map(k=>`${k}=${state.compareNames[k]}`).join(', ');
@@ -795,6 +849,17 @@
   };
   // Yleisen kierrosmäärän muutos päivittää sarjat, joita ei ole muutettu erikseen
   els.inputs.laps.addEventListener('input', () => { $('seriesLapsRows').querySelectorAll('input').forEach(x => { if (x.dataset.touched!=='1') x.value=els.inputs.laps.value; }); });
+  const renderHiddenBox = () => {
+    const n=(state.hiddenBibs||[]).length; els.hiddenBox.style.display = n ? 'flex' : 'none';
+    if (n) $('hiddenText').textContent=`Piilotettuja numeroita: ${n}`;
+  };
+  $('restoreHiddenBtn').addEventListener('click', async () => {
+    const n=(state.hiddenBibs||[]).length; if (!n) return;
+    const ok=await askConfirm({ title:'Palautetaanko piilotetut?', text:`${n} piilotettua numeroa palautetaan ruudukkoon.`, ok:'Palauta', cancel:'Peru', danger:false });
+    if (!ok) return;
+    state.hiddenBibs=[]; state.history=(state.history||[]).filter(h=>h.type!=='hide');
+    rebuildColsFromData(); checkAllFinished(); commit(); renderHiddenBox(); showToast(`${n} numeroa palautettu`);
+  });
   const openSheet = () => { els.sheet.classList.add('open'); els.sheet.setAttribute('aria-hidden','false'); els.gearBtn.style.display='none'; fillInputs(); updateSettingsControls(); applyTheme(getThemeMode()); };
   const closeSheet = () => { els.sheet.classList.remove('open'); els.sheet.setAttribute('aria-hidden','true'); els.gearBtn.style.display='grid'; };
   els.gearBtn.addEventListener('click', openSheet);
@@ -956,6 +1021,7 @@
     const sLaps={}; let badSL=null;
     $('seriesLapsRows').querySelectorAll('input').forEach(x => { const v=numOr(x.value,null); if (v===null || !Number.isInteger(v) || v<1 || v>MAX_LAPS) badSL=badSL||x.dataset.series; else sLaps[x.dataset.series]=v; });
     if (badSL) return err(`Sarjan ${badSL} kierrosmäärä: 1–${MAX_LAPS}.`);
+    const llRaw=numOr(i.lateLimit.value,null); if (llRaw===null || !Number.isInteger(llRaw) || llRaw<0 || llRaw>999) return err('Ohittaneiden määrä: 0–999.');
     const pf=parseNamesFull(i.allNames.value);
     const oldBS=state.bibStart, oldBE=state.bibEnd, oldIV=state.interval;
     const oldSig=lapsSig(state.laps, state.seriesLaps, state.seriesMap, state.seriesOrder, state.bibStart, state.bibEnd);
@@ -968,7 +1034,7 @@
       const ok = await askConfirm({ title:'Tyhjennetäänkö kirjaukset?', text:'Numerovälin, lähtövälin tai kierrosmäärän muutos aloittaa uuden kisan ja poistaa nykyiset kirjaukset ja tulokset.', ok:'Kyllä, tyhjennä', cancel:'Peruuta' });
       if (!ok) return;
     }
-    state.bibStart=newBS; state.bibEnd=newBE; state.interval=newIV; state.laps=lpRaw; state.seriesLaps=newSL;
+    state.bibStart=newBS; state.bibEnd=newBE; state.interval=newIV; state.laps=lpRaw; state.seriesLaps=newSL; state.lateLimit=llRaw;
     state.followBibs=fbList; state.followNames=fnMap;
     state.followBib = fbList.includes(state.followBib) ? state.followBib : (fbList.length ? fbList[0] : null);
     state.compareBibs=parseNumList(i.compareBibs.value); state.compareNames=parseNameMap(i.compareNames.value);
@@ -1024,7 +1090,7 @@
       });
       body+='</tbody></table>';
     }
-    const unfinished=[]; for (let b=state.bibStart;b<=state.bibEnd;b++){ if(!inView(b)) continue; const d=state.data.get(b); const n=d?d.passes.length:0; if(n>0 && n<lapsOf(b)) unfinished.push({b,n}); }
+    const unfinished=[]; for (let b=state.bibStart;b<=state.bibEnd;b++){ if(!inView(b) || isHidden(b)) continue; const d=state.data.get(b); const n=d?d.passes.length:0; if(n>0 && n<lapsOf(b)) unfinished.push({b,n}); }
     if (unfinished.length) {
       body+=`<h${ser!==null?3:2}>Kesken (ei vielä kaikkia kierroksia)</h${ser!==null?3:2}><table><thead><tr><th class="n">Nro</th><th>Nimi</th><th class="n">Kier.</th><th class="n">Ohitukset</th></tr></thead><tbody>`;
       unfinished.forEach(u => { body+=`<tr${rowCls(u.b)}><td class="n">${u.b}</td><td>${escHtml(resolveDisplayName(u.b))}</td><td class="n">${u.n}/${lapsOf(u.b)}</td><td class="n">${clocks(u.b).join('<br>')}</td></tr>`; });
@@ -1032,6 +1098,12 @@
     }
     });
     state.viewSeries=keepView; state.followBib=keepFollow;
+    const hid=(state.hiddenBibs||[]).slice().sort((a,b)=>a-b);
+    if (hid.length) {
+      body+=`<h2>Piilotetut (ei saapunut)</h2><table><thead><tr><th class="n">Nro</th><th>Nimi</th>${multiSeries()?'<th>Sarja</th>':''}<th class="n">Kier.</th></tr></thead><tbody>`;
+      hid.forEach(b => { const n=(state.data.get(b)?.passes.length)||0; body+=`<tr${rowCls(b)}><td class="n">${b}</td><td>${escHtml(resolveDisplayName(b))}</td>${multiSeries()?`<td>${escHtml(seriesOf(b))}</td>`:''}<td class="n">${n}/${lapsOf(b)}</td></tr>`; });
+      body+='</tbody></table>';
+    }
     const css=`:root{color-scheme:light dark}body{font-family:-apple-system,system-ui,"Segoe UI",Roboto,Arial,sans-serif;margin:12px;font-size:14px;line-height:1.3}
 h1{font-size:20px;margin:0 0 10px}h2{font-size:17px;margin:20px 0 6px}h2.ser{font-size:19px;margin-top:26px;padding-top:8px;border-top:3px solid #888}h3{font-size:16px;margin:14px 0 6px}
 table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
