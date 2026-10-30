@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.9)</title>
+  <title>Kilpailuajastin (4.11)</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
@@ -317,7 +317,7 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.9)</h3>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.11)</h3>
       <ul>
         <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
@@ -515,7 +515,7 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.9', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+  const toPlain = () => ({ version:'4.11', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
     compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, seriesMap:state.seriesMap, seriesOrder:state.seriesOrder, seriesLaps:state.seriesLaps, lateLimit:state.lateLimit, hiddenBibs:state.hiddenBibs, viewSeries:state.viewSeries, seriesFollow:state.seriesFollow, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
@@ -564,7 +564,10 @@
   const clampLap = (lap) => Math.max(1, Math.min(viewLaps(), lap));
   const getViewLap = () => state.viewLapOverride!=null ? clampLap(state.viewLapOverride) : currentLap();
   const lapDelta = (a,b,lap) => { const A=state.data.get(a), B=state.data.get(b); if(!A||!B) return null; if(A.adj.length<lap || B.adj.length<lap) return null; return A.adj[lap-1]-B.adj[lap-1]; };
-  const totalBibs = () => Math.max(0, state.bibEnd - state.bibStart + 1);
+  // Kun lähtölista on annettu, listalta puuttuvat numerot (esim. sarjojen välissä) eivät ole mukana kisassa
+  const hasStartList = () => Object.keys(state.allNames||{}).length>0;
+  const inField = (bib) => !hasStartList() || (state.allNames[bib]!==undefined) || state.data.has(bib);
+  const totalBibs = () => { let n=0; for (let b=state.bibStart;b<=state.bibEnd;b++) if (inField(b)) n++; return n; };
   const hasAnyData = () => participantsWithPass().length>0 || state.raceStartMs!=null || state.raceStopped;
   const isRaceRunning = () => { const total=totalBibs(); const everyoneDone=(state.finishedCount===total && total>0); return (participantsWithPass().length>0 || state.raceStartMs!=null) && !everyoneDone && !state.raceStopped; };
   const updateFinishedClass = () => { const total=totalBibs(); document.body.classList.toggle('all-finished', total>0 && state.finishedCount===total); };
@@ -572,7 +575,7 @@
   // Sarakkeet johdetaan datasta: kilpailija on sarakkeessa (ohitusten määrä), jos ei ole vielä valmis.
   const rebuildColsFromData = () => {
     state.cols = Array.from({length:colCount()},()=>[]);
-    for (let b=state.bibStart; b<=state.bibEnd; b++) { if (isHidden(b)) continue; const n=(state.data.get(b)?.passes.length)||0; if (n<lapsOf(b)) state.cols[n].push(b); }
+    for (let b=state.bibStart; b<=state.bibEnd; b++) { if (isHidden(b) || !inField(b)) continue; const n=(state.data.get(b)?.passes.length)||0; if (n<lapsOf(b)) state.cols[n].push(b); }
   };
   const insertSorted = (arr, bib) => { if(!arr || arr.includes(bib)) return; let i=0; while(i<arr.length && arr[i]<bib) i++; arr.splice(i,0,bib); };
   const moveBib = (from,to,bib) => {
@@ -590,7 +593,7 @@
     updateRaceClock();
   };
   const checkAllFinished = () => {
-    let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ const d=state.data.get(b); if(isHidden(b) || (d && d.passes.length>=lapsOf(b))) finished++; }
+    let finished=0; for(let b=state.bibStart;b<=state.bibEnd;b++){ if(!inField(b)) continue; const d=state.data.get(b); if(isHidden(b) || (d && d.passes.length>=lapsOf(b))) finished++; }
     state.finishedCount=finished;
     const allDone = finished>0 && finished===totalBibs();
     if (allDone) { if (state.raceStopMs==null) state.raceStopMs=Date.now(); }
@@ -693,6 +696,7 @@
     const cnt=new Map();
     for (let b=state.bibEnd; b>=state.bibStart; b--) {
       const n=(state.data.get(b)?.passes.length)||0; const ser=seriesOf(b);
+      if (!inField(b)) continue;
       if (n===colIdx && !isHidden(b) && (cnt.get(ser)||0)>=lim) out.add(b);
       if (n>colIdx) cnt.set(ser,(cnt.get(ser)||0)+1);
     }
@@ -907,8 +911,51 @@
   // Yhdistetty kenttä: "numero=nimi" -rivit, liitetty lähtölista (taulukko tai rivit) ja sarjaotsikot.
   // Palauttaa { map: numero->nimi, series: numero->sarja, order: [sarjat] }.
   const HEADER_WORDS = /\b(nro|numero|bib|nimi|name|lähtöaika|aika|seura|club|sija)\b/i;
+  // Pystymuotoinen lähtölista (nettisivulta kopioitu): jokainen tieto omalla rivillään.
+  //   M10 / Pojat 10 1.5 km P / 11:12:00 / 225 / Nimi / Seura / lisenssi / ... / Sarjaluettelo / N12 / ...
+  // Sarja = tekstirivi(t) kilpailijoiden välissä seuran jälkeen; sarjakoodi (esim. M10, N12, H21) valitaan ensisijaisesti.
+  const RE_TIME = /^\d{1,2}[:.]\d{2}([:.]\d{2})?$/, RE_BIB = /^\d{1,5}$/, RE_LONGNUM = /^[\d\s\-]{6,}$/;
+  const RE_CODE = /^[A-Za-zÅÄÖåäö]{1,3}\s?\d{1,3}[A-Za-zÅÄÖåäö]{0,3}$/;
+  const RE_NAV = /^(sarjaluettelo|sarjat|takaisin|alkuun|top|back|tulosta|print)$/i;
+  const nameIdxAfter = (lines, i) => { let j=i+1; while (j<lines.length && RE_TIME.test(lines[j])) j++; const nx=lines[j]; return (nx && /\p{L}/u.test(nx) && !nx.includes('\t')) ? j : -1; };
+  const isVerticalList = (lines) => {
+    let pairs=0, nums=0;
+    for (let i=0;i<lines.length;i++) { if (!RE_BIB.test(lines[i])) continue; nums++; if (nameIdxAfter(lines,i)>=0) pairs++; }
+    return pairs>=2 && pairs>=nums*0.6;
+  };
+  const parseVerticalList = (lines) => {
+    const map={}, series={}, order=[]; let cur='', group=[], started=false;
+    const flush = () => {
+      const g=group.filter(x=>!RE_NAV.test(x)); group=[];
+      const cand = started ? g.slice(1) : g;          // kilpailijan jälkeen ensimmäinen tekstirivi on seura
+      if (!cand.length) return;
+      const name = cand.find(x=>RE_CODE.test(x)) || cand[0];
+      cur=name.trim(); if (!order.includes(cur)) order.push(cur);
+    };
+    for (let i=0;i<lines.length;i++) {
+      const l=lines[i];
+      if (RE_TIME.test(l)) { flush(); continue; }
+      if (RE_BIB.test(l)) {
+        const j=nameIdxAfter(lines,i);
+        if (j>=0) {
+          flush(); const nro=Number(l);
+          if (nro>0) { map[nro]=lines[j]; if (cur) series[nro]=cur; }
+          started=true; i=j; continue;
+        }
+        continue;
+      }
+      if (RE_LONGNUM.test(l)) continue;                // lisenssinumero tms.
+      if (/\p{L}/u.test(l)) group.push(l);
+    }
+    const used=order.filter(n=>Object.values(series).includes(n));
+    return {map, series: used.length>1 ? series : {}, order: used.length>1 ? used : []};
+  };
   const parseNamesFull = (txt) => {
-    const lines=String(txt||'').replace(/\r/g,'').split('\n');
+    const lines=String(txt||'').replace(/\r/g,'').replace(/<[^>]*>/g,'').split('\n');
+    if (!lines.some(l=>/^\s*\d+\s*=/.test(l)) && !lines.some(l=>/^\s*sarja\s*:/i.test(l))) {
+      const tl=lines.map(l=>l.trim()).filter(Boolean);
+      if (isVerticalList(tl)) return parseVerticalList(tl);
+    }
     const map={}, series={}, order=[]; let cur='';
     const norm=(x)=>String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
     const setSeries=(name)=>{ name=String(name||'').replace(/^\s*(sarja|series|class|luokka)\s*[:\-]?\s*/i,'').replace(/^\[|\]$/g,'').replace(/[:\s]+$/,'').trim(); if(!name) return; cur=name; };
@@ -967,7 +1014,7 @@
     if (Number(els.inputs.bibStart.value)===lo && Number(els.inputs.bibEnd.value)===hi) { box.style.display='none'; return; }
     suggestRange={lo,hi};
     const gaps=(hi-lo+1)-nums.length;
-    $('rangeSuggestText').textContent=`Listalla ${nums.length} kilpailijaa, numerot ${lo}–${hi}${gaps>0?` (${gaps} puuttuu välistä)`:''}${pf.order.length>1?`, ${pf.order.length} sarjaa`:''}.`;
+    $('rangeSuggestText').textContent=`Listalla ${nums.length} kilpailijaa, numerot ${lo}–${hi}${pf.order.length>1?`, ${pf.order.length} sarjaa`:''}.`;
     box.style.display='flex';
   };
   // Seurattavien ja vertailtavien nimet täydentyvät lähtölistasta. Käsin kirjoitettu nimi säilyy.
@@ -1042,6 +1089,7 @@
     rebuildSeries(); if (multiSeries()) syncFollowToView();
     if (baseChanged) { state.raceStopped=false; state.raceStopMs=null; document.body.classList.remove('race-stopped'); initLists(false); }
     else if (lapsChanged) { rebuildColsFromData(); state.history=[]; state.viewLapOverride=null; checkAllFinished(); showToast('Kierrosmäärä muutettu. Peruuta-historia tyhjennettiin.'); }
+    else { rebuildColsFromData(); checkAllFinished(); }
     saveSettings(); commit(); closeSheet();
     if (multiSeries()) { const info=seriesInfoFor(state.seriesOrder, state.seriesMap, state.bibStart, state.bibEnd); if (info.length>1) showToast(`Numeroväli sisältää ${info.length} sarjaa: ${info.map(x=>x.name).join(', ')}`, 3200); }
   });
