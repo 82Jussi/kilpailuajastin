@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="dark light" />
   <meta name="theme-color" content="#04070c" />
-  <title>Kilpailuajastin (4.11)</title>
+  <title>Kilpailuajastin (4.12)</title>
   <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
@@ -286,7 +286,7 @@
       <div class="mt"><label for="compareNames">Vertailtavien nimet (numero=nimi, …)</label><input id="compareNames" type="text" placeholder="Täydentyy lähtölistasta, tai 2=Nimi, 4=Nimi" /></div>
       <div class="mt">
         <label for="allNames">Lähtölista ja nimet</label>
-        <textarea id="allNames" placeholder="Liitä lähtölista (esim. nettisivulta tai Excelistä) tai kirjoita yksi per rivi:&#10;117 Petra Rautiainen&#10;118=Matti Meikäläinen"></textarea>
+        <textarea id="allNames" style="min-height:200px" placeholder="Liitä lähtölista (esim. nettisivulta tai Excelistä) tai kirjoita yksi per rivi:&#10;117 Maija Meikäläinen&#10;118=Matti Meikäläinen"></textarea>
         <div class="hint">Hyväksyy taulukon (sarakkeet <b>Nro</b> ja <b>Nimi</b>, valinnainen <b>Sarja</b>), rivit <code>117 Nimi</code> tai <code>117=Nimi</code>. Lähtöaikasarake ohitetaan. Useita sarjoja: sarjan nimi omalle rivilleen ennen sen kilpailijoita (esim. <code>M21</code> tai <code>Sarja: M21</code>). Nimet otetaan käyttöön, kun painat Tallenna.</div>
         <div class="suggest" id="rangeSuggest" style="display:none">
           <span id="rangeSuggestText"></span>
@@ -317,7 +317,7 @@
 
   <div class="modal" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
     <div class="card" tabindex="-1">
-      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.11)</h3>
+      <h3 id="helpTitle">Ohje (Kilpailuajastin 4.12)</h3>
       <ul>
         <li><b>Asetukset</b> avautuvat oikean alakulman ratas-painikkeesta (vaaka-asennossa vasemmassa alakulmassa). Muutokset tulevat voimaan, kun painat <b>Tallenna</b>. Paneelin saa suljettua myös vetämällä sitä alas yläreunan kahvasta.</li>
         <li><b>Ulkoasu</b>: <b>Auto</b> seuraa puhelimen teemaa, <b>Tumma</b> sopii pimeään ja <b>Aurinko</b> kirkkaaseen päivänvaloon.</li>
@@ -515,7 +515,7 @@
   applyTheme(getThemeMode());
 
   // ===================== Tallennus =====================
-  const toPlain = () => ({ version:'4.11', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
+  const toPlain = () => ({ version:'4.12', savedAt:Date.now(), bibStart:state.bibStart, bibEnd:state.bibEnd, interval:state.interval, laps:state.laps, followBib:state.followBib, followBibs:state.followBibs, followNames:state.followNames,
     compareBibs:state.compareBibs, compareNames:state.compareNames, allNames:state.allNames, seriesMap:state.seriesMap, seriesOrder:state.seriesOrder, seriesLaps:state.seriesLaps, lateLimit:state.lateLimit, hiddenBibs:state.hiddenBibs, viewSeries:state.viewSeries, seriesFollow:state.seriesFollow, raceStartMs:state.raceStartMs, finishedCount:state.finishedCount, cols:state.cols,
     history:state.history||[], viewLapOverride:state.viewLapOverride??null, raceStopped:!!state.raceStopped, raceStopMs:state.raceStopMs??null,
     data:Array.from(state.data.entries()).map(([bib,v])=>({bib, passes:v.passes, adj:v.adj})) });
@@ -958,7 +958,7 @@
     }
     const map={}, series={}, order=[]; let cur='';
     const norm=(x)=>String(x||'').toLowerCase().replace(/\s+/g,' ').trim();
-    const setSeries=(name)=>{ name=String(name||'').replace(/^\s*(sarja|series|class|luokka)\s*[:\-]?\s*/i,'').replace(/^\[|\]$/g,'').replace(/[:\s]+$/,'').trim(); if(!name) return; cur=name; };
+    const setSeries=(name)=>{ name=String(name||'').replace(/^\s*(sarja|series|class|luokka)(\s*[:\-]\s*|\s+)/i,'').replace(/^\[|\]$/g,'').replace(/[:\s]+$/,'').trim(); if(!name) return; cur=name; };
     const add=(nro,nimi,ser)=>{ if(!Number.isInteger(nro)||nro<=0||!nimi) return; map[nro]=nimi; const sr=(ser!==undefined&&ser!=='')?ser:cur; if(sr){ series[nro]=sr; if(!order.includes(sr)) order.push(sr); } };
     // Taulukon otsikkorivi (Nro + Nimi, valinnainen Sarja)
     let tbl=null;
@@ -981,11 +981,18 @@
       const m=t.match(/^(\d{1,5})\.?\s+(.+?)$/); if (m) { add(Number(m[1]), m[2].trim()); continue; }
       // Muu lyhyt rivi = sarjan nimi (otsikkorivit ohitetaan)
       const one=cells.filter(Boolean);
-      if (one.length===1 && l.length<=40 && /\p{L}/u.test(l) && !HEADER_WORDS.test(l)) setSeries(l);
+      if (RE_NAV.test(l)) continue;                    // navigointilinkit (esim. Sarjaluettelo)
+      // Sarjaotsikko: rivillä ei ole kilpailunumeroa eikä aikaa. Sarjakoodi (esim. N06) valitaan ensisijaisesti.
+      if (one.length>=1 && /\p{L}/u.test(l) && !one.some(c=>RE_BIB.test(c)||RE_TIME.test(c)) && !HEADER_WORDS.test(l)) {
+        const firstTok=one[0].split(/\s+/)[0];
+        const code=one.find(c=>RE_CODE.test(c)) || (RE_CODE.test(firstTok) ? firstTok : null);
+        if (code) { setSeries(code); continue; }
+        if (one.length===1 && l.length<=40) setSeries(l);
+      }
     }
     // Jos "sarjoja" on lähes yhtä monta kuin kilpailijoita, rivit eivät olleet sarjoja (esim. seura omalla rivillään)
     const used=order.filter(n=>Object.values(series).includes(n));
-    if (used.length>1 && Object.keys(series).length < used.length*2) return {map, series:{}, order:[]};
+    if (used.length>1 && !used.every(n=>RE_CODE.test(n)) && Object.keys(series).length < used.length*2) return {map, series:{}, order:[]};
     return {map, series, order:used};
   };
   const parseNamesAny = (txt) => parseNamesFull(txt).map;
